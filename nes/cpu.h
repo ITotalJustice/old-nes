@@ -52,8 +52,6 @@ typedef struct
 
     uint16_t oprand; /// can be 1 or 2 bytes depending on the addressing.
     uint8_t opcode;
-
-    bool halt;
 } cpu_t;
 
 void cpu_reset();

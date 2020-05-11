@@ -7,6 +7,15 @@
 
 #include "cpu.h"
 
+#define BIT0 (1)
+#define BIT1 (1 << 1)
+#define BIT2 (1 << 2)
+#define BIT3 (1 << 3)
+#define BIT4 (1 << 4)
+#define BIT5 (1 << 5)
+#define BIT6 (1 << 6)
+#define BIT7 (1 << 7)
+
 
 cpu_t *cpu = NULL;
 
@@ -24,6 +33,11 @@ uint8_t read8(uint16_t addr)
 
 uint16_t read16(uint16_t addr)
 {
+    /// read16 along with write16 isn't actually a nes thing.
+    /// the nes would read a byte, inc the pc, then read another byte, then inc the pc.
+    /// same for the write16(?).
+    /// however, i cannot think of a single reason for this to effect accuracy.
+    /// so hence read/write 2 bytes directly for performance.
     tick(2);
     return 0;
 }
@@ -39,12 +53,14 @@ void write16(uint16_t addr, uint16_t v)
 }
 
 /// https://youtu.be/fWqBmmPQP40?t=556
-void address_load(AddressingType type, bool page_cross)
+/// http://archive.6502.org/books/mcs6500_family_hardware_manual.pdf
+void address_load(AddressingType type)
 {
     switch (type)
     {
         case AddressingType_Immediate:
             cpu->oprand = cpu->reg.PC++;
+            tick(1);
             break;
         
         case AddressingType_Absolute:
@@ -53,7 +69,7 @@ void address_load(AddressingType type, bool page_cross)
             break;
         
         case AddressingType_AbsoluteX:
-            if (page_cross && (cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.X) & 0x0F00))
+            if ((cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.X) & 0x0F00))
             {
                 tick(1);
             }
@@ -63,7 +79,7 @@ void address_load(AddressingType type, bool page_cross)
             break;
 
         case AddressingType_AbsoluteY:
-            if (page_cross && (cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.Y) & 0x0F00))
+            if ((cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.Y) & 0x0F00))
             {
                 tick(1);
             }
@@ -103,7 +119,6 @@ void address_load(AddressingType type, bool page_cross)
             break;
         }
 
-        // TODO: check if PC can be > 0xFF.
         // Different to indirectX in that it does the lookup first, then adds Y.
         case AddressingType_IndirectZeroPageY:
         {
@@ -166,14 +181,32 @@ void ADC()
 
 void AND()
 {
+    cpu->reg.A &= cpu->oprand;
+
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+}
+
+void ASL_A()
+{
+    cpu->reg.status_flag.C = cpu->reg.A >> 7;
+
+    cpu->reg.A <<= 1;
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
 }
 
 void ASL()
 {
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = v << 1;
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.C = v >> 7;
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+    cpu->reg.status_flag.N = (r >> 7) == 1;
 }
 
 void BIT(){}
@@ -232,71 +265,120 @@ void SED() // set decimal
 
 void CMP()
 {
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = cpu->reg.A - v;
+
+    cpu->reg.status_flag.C = (cpu->reg.A >= v);
+    cpu->reg.status_flag.Z = r == 0;
+    cpu->reg.status_flag.N = (r >> 7) == 1; 
 }
 
 void CPX()
 {
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = cpu->reg.X - v;
+
+    cpu->reg.status_flag.C = (cpu->reg.X >= v);
+    cpu->reg.status_flag.Z = r == 0;
+    cpu->reg.status_flag.N = (r >> 7) == 1; 
 }
 
 void CPY()
 {
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = cpu->reg.Y - v;
+
+    cpu->reg.status_flag.C = (cpu->reg.Y >= v);
+    cpu->reg.status_flag.Z = r == 0;
+    cpu->reg.status_flag.N = (r >> 7) == 1; 
 }
 
 void DEC()
 {
-    /*
-    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
-    */
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = v - 1;
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.Z = r == 0; 
+    cpu->reg.status_flag.N = (r >> 7) == 1;
 }
 
 void EOR()
 {
-    /*
+    cpu->reg.A ^= read8(cpu->oprand);
+
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
-    */
 }
 
 void INC()
 {
-    /*
-    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
-    */
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = v + 1;
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.Z = r == 0; 
+    cpu->reg.status_flag.N = (r >> 7) == 1;
 }
 
-void JMP(){}
+void JMP()
+{
+    cpu->reg.PC = cpu->oprand;
+}
 
-void JSR(){}
+void JSR()
+{
+    write16(cpu->reg.SP, cpu->reg.PC - 1);
+    cpu->reg.SP += 2;
+    cpu->reg.PC = cpu->oprand;
+}
 
 void LDA()
 {
+    cpu->reg.A = read8(cpu->oprand);
+
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
 }
 
 void LDX()
 {
+    cpu->reg.X = read8(cpu->oprand);
+
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1;
 }
 
 void LDY()
 {
+    cpu->reg.Y = read8(cpu->oprand);
+
     cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
     cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1;
 }
 
-void LSR()
+void LSR_A()
 {
-    /*
+    cpu->reg.status_flag.C = cpu->reg.A & 1;
+
+    cpu->reg.A >>= 1;
+    
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
-    */
+}
+
+void LSR()
+{
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = v >> 1;
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.C = v & 1;
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (r >> 7) == 1;
 }
 
 void NOP()
@@ -306,15 +388,39 @@ void NOP()
 
 void ORA()
 {
+    cpu->reg.A |= read8(cpu->oprand);
+
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
 }
 
+void PHA()
+{
+    write8(cpu->reg.SP, cpu->reg.A);
+    --cpu->reg.SP;;
+}
+
+void PHP()
+{
+    write8(cpu->reg.SP, cpu->reg.P);
+    --cpu->reg.SP;;
+}
+
 void PLA()
 {
+    ++cpu->reg.SP;
+    cpu->reg.A = read8(cpu->reg.SP);
+
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
 }
+
+void PLP()
+{
+    ++cpu->reg.SP;
+    cpu->reg.P = read8(cpu->reg.SP);
+}
+
 
 /*
 *   Register Instructions.
@@ -416,34 +522,98 @@ void INY()
     tick(2);
 }
 
+void ROL_A()
+{
+    uint8_t old_c_flag = cpu->reg.status_flag.C;
+    cpu->reg.status_flag.C = cpu->reg.A >> 7;
+
+    cpu->reg.A = (cpu->reg.A << 1) | old_c_flag;
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
 void ROL()
 {
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = (v << 1) | cpu->reg.status_flag.C;
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.C = (v >> 7);
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    cpu->reg.status_flag.N = (r >> 7) == 1;
+}
+
+void ROR_A()
+{
+    uint8_t old_c_flag = cpu->reg.status_flag.C;
+    cpu->reg.status_flag.C = cpu->reg.A >> 7;
+
+    cpu->reg.A = (cpu->reg.A >> 1) | (old_c_flag << 7);
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
 }
 
 void ROR()
 {
+    uint8_t v = read8(cpu->oprand);
+    uint8_t r = (v >> 1) | (cpu->reg.status_flag.C << 7);
+
+    write8(cpu->oprand, r);
+
+    cpu->reg.status_flag.C = (v >> 7);
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    cpu->reg.status_flag.N = (r >> 7) == 1;
 }
 
-void RTI(){}
+void RTI()
+{
+    // TODO: Verify
+    ++cpu->reg.SP;
+    cpu->reg.P = read8(cpu->reg.SP);
 
-void RTS(){}
+    cpu->reg.SP += 2;
+    cpu->reg.PC = read16(cpu->reg.SP);
+    tick(3);
+}
+
+void RTS()
+{
+    // TODO: Verify
+    cpu->reg.SP += 2;
+    cpu->reg.PC = read16(cpu->reg.SP) - 1;
+    tick(4);
+}
 
 void SBC()
 {
-    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;    
+    // TODO: Not finished
+    uint8_t old_carry_flag = cpu->reg.status_flag.C;
+    uint8_t v = read8(cpu->oprand);
+    cpu->reg.status_flag.C = v < cpu->reg.A - (!cpu->reg.status_flag.C);
+    uint8_t r = v - cpu->reg.A - old_carry_flag;
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0;
+    //cpu->reg.status_flag.V =
+    cpu->reg.status_flag.N = (r >> 7) == 1;    
 }
 
-void STA(){}
+void STA()
+{
+    write8(cpu->oprand, cpu->reg.A);
+}
 
-void STX(){}
+void STX()
+{
+    write8(cpu->oprand, cpu->reg.X);
+}
 
-void STY(){}
+void STY()
+{
+    write8(cpu->oprand, cpu->reg.Y);
+}
 
 
 int execute(void)
@@ -456,76 +626,121 @@ int execute(void)
             NIP();
             break;
         case 0x01:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            ORA();
             break;
         case 0x05:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            ORA();
             break;
         case 0x06:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            ASL();
             break;
         case 0x08:
             NIP();
             break;
+        case 0x09:
+            address_load(AddressingType_Immediate);
+            ORA();
+            break;
         case 0x0A:
-            NIP();
+            ASL_A();
+            break;
+        case 0x0D:
+            address_load(AddressingType_Absolute);
+            ORA();
             break;
         case 0x0E:
-            NIP();
+            address_load(AddressingType_Absolute);
+            ASL();
             break;
         case 0x10:
             NIP();
             break;
+        case 0x11:
+            address_load(AddressingType_IndirectZeroPageY);
+            ORA();
+            break;
+        case 0x15:
+            address_load(AddressingType_ZeroPageX);
+            ORA();
+            break;
         case 0x16:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            ASL();
             break;
         case 0x18:
             CLC();
+            break;
+        case 0x19:
+            address_load(AddressingType_AbsoluteY);
+            ORA();
+            break;
+        case 0x1D:
+            address_load(AddressingType_AbsoluteX);
+            ORA();
             break;
         case 0x1E:
             NIP();
             break;
         case 0x20:
-            NIP();
+            address_load(AddressingType_Absolute);
+            JSR();
             break;
         case 0x21:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            AND();
             break;
         case 0x24:
+            address_load(AddressingType_ZeroPage);
             NIP();
             break;
         case 0x25:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            AND();
             break;
         case 0x26:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            ROL();
             break;
         case 0x28:
             NIP();
             break;
+        case 0x29:
+            address_load(AddressingType_Immediate);
+            AND();
+            break;
         case 0x2A:
-            NIP();
+            ROL_A();
             break;
         case 0x2C:
+            address_load(AddressingType_Absolute);
+            BIT();
             NIP();
             break;
         case 0x2D:
-            NIP();
+            address_load(AddressingType_Absolute);
+            AND();
             break;
         case 0x2E:
-            NIP();
+            address_load(AddressingType_Absolute);
+            ROL();
             break;
         case 0x30:
             NIP();
             break;
         case 0x31:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageY);
+            AND();
             break;
         case 0x35:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            AND();
             break;
         case 0x36:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            ROL();
             break;
         case 0x38:
             SEC();
@@ -537,49 +752,60 @@ int execute(void)
             NIP();
             break;
         case 0x3E:
-            NIP();
+            address_load(AddressingType_AbsoluteX);
+            ROL();
             break;
         case 0x40:
             NIP();
             break;
         case 0x41:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            EOR();
             break;
         case 0x45:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            EOR();
             break;
         case 0x46:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            LSR();
             break;
         case 0x48:
             NIP();
             break;
         case 0x49:
-            NIP();
+            address_load(AddressingType_Immediate);
+            EOR();
             break;
         case 0x4A:
-            NIP();
+            LSR();
             break;
         case 0x4C:
-            NIP();
+            address_load(AddressingType_Absolute);
+            JMP();
             break;
         case 0x4D:
-            NIP();
+            address_load(AddressingType_Absolute);
+            EOR();
             break;
         case 0x4E:
-            NIP();
+            address_load(AddressingType_Absolute);
+            LSR();
             break;
         case 0x50:
             NIP();
             break;
         case 0x51:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageY);
+            EOR();
             break;
         case 0x55:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            EOR();
             break;
         case 0x56:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            LSR();
             break;
         case 0x58:
             CLI();
@@ -591,37 +817,44 @@ int execute(void)
             NIP();
             break;
         case 0x5E:
-            NIP();
+            address_load(AddressingType_AbsoluteX);
+            LSR();
             break;
         case 0x60:
             NIP();
             break;
         case 0x61:
+            address_load(AddressingType_IndirectZeroPageX);
             NIP();
             break;
         case 0x65:
+            address_load(AddressingType_ZeroPage);
             NIP();
             break;
         case 0x66:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            ROR();
             break;
         case 0x68:
             NIP();
             break;
         case 0x69:
+            address_load(AddressingType_Immediate);
             NIP();
             break;
         case 0x6A:
-            NIP();
+            ROR_A();
             break;
         case 0x6C:
             NIP();
             break;
         case 0x6D:
+            address_load(AddressingType_Absolute);
             NIP();
             break;
         case 0x6E:
-            NIP();
+            address_load(AddressingType_Absolute);
+            ROR();
             break;
         case 0x70:
             NIP();
@@ -630,10 +863,12 @@ int execute(void)
             NIP();
             break;
         case 0x75:
+            address_load(AddressingType_ZeroPageX);
             NIP();
             break;
         case 0x76:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            ROR();
             break;
         case 0x78:
             SEI();
@@ -645,19 +880,24 @@ int execute(void)
             NIP();
             break;
         case 0x7E:
-            NIP();
+            address_load(AddressingType_AbsoluteX);
+            ROR();
             break;
         case 0x81:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            STA();
             break;
         case 0x84:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            STY();
             break;
         case 0x85:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            STA();
             break;
         case 0x86:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            STX();
             break;
         case 0x88:
             DEY();
@@ -666,79 +906,110 @@ int execute(void)
             TXA();
             break;
         case 0x8C:
-            NIP();
+            address_load(AddressingType_Absolute);
+            STY();
             break;
         case 0x8D:
-            NIP();
+            address_load(AddressingType_Absolute);
+            STA();
             break;
         case 0x8E:
-            NIP();
+            address_load(AddressingType_Absolute);
+            STX();
             break;
         case 0x90:
             NIP();
             break;
         case 0x91:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageY);
+            STA();
             break;
         case 0x94:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            STY();
             break;
         case 0x95:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            STA();
             break;
         case 0x96:
-            NIP();
+            address_load(AddressingType_ZeroPageY);
+            STX();
             break;
         case 0x98:
             TYA();
             break;
         case 0x99:
-            NIP();
+            address_load(AddressingType_AbsoluteY);
+            STA();
             break;
         case 0x9A:
             TXS();
             break;
+        case 0x9D:
+            address_load(AddressingType_AbsoluteX);
+            STA();
+            break;
         case 0xA0:
-            NIP();
+            address_load(AddressingType_Immediate);
+            LDY();
             break;
         case 0xA1:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            LDA();
             break;
         case 0xA2:
-            NIP();
+            address_load(AddressingType_Immediate);
+            LDX();
+            break;
+        case 0xA4:
+            address_load(AddressingType_ZeroPage);
+            LDY();
+            break;
+        case 0xA5:
+            address_load(AddressingType_ZeroPage);
+            LDA();
             break;
         case 0xA6:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            LDX();
             break;
         case 0xA8:
             TAY();
             break;
         case 0xA9:
-            NIP();
+            address_load(AddressingType_Immediate);
+            LDA();
             break;
         case 0xAA:
             TAX();
             break;
         case 0xAC:
-            NIP();
+            address_load(AddressingType_Absolute);
+            LDY();
             break;
         case 0xAD:
-            NIP();
+            address_load(AddressingType_Absolute);
+            LDA();
             break;
         case 0xAE:
-            NIP();
+            address_load(AddressingType_Absolute);
+            LDX();
             break;
         case 0xB0:
             NIP();
             break;
         case 0xB1:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageY);
+            LDA();
             break;
         case 0xB4:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            LDY();
             break;
         case 0xB5:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            LDA();
             break;
         case 0xB6:
             NIP();
@@ -747,58 +1018,83 @@ int execute(void)
             CLV();
             break;
         case 0xB9:
-            NIP();
+            address_load(AddressingType_AbsoluteY);
+            LDA();
             break;
         case 0xBA:
             TSX();
             break;
         case 0xBC:
-            NIP();
+            address_load(AddressingType_AbsoluteX);
+            LDY();
             break;
         case 0xBD:
-            NIP();
+            address_load(AddressingType_AbsoluteX);
+            LDA();
             break;
         case 0xBE:
-            NIP();
+            address_load(AddressingType_AbsoluteY);
+            LDX();
             break;
         case 0xC0:
-            NIP();
+            address_load(AddressingType_Immediate);
+            CPY();
             break;
         case 0xC1:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageX);
+            CMP();
             break;
         case 0xC4:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            CPY();
             break;
         case 0xC5:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            CMP();
             break;
         case 0xC6:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            DEC();
             break;
         case 0xC8:
             INY();
             break;
         case 0xC9:
-            NIP();
+            address_load(AddressingType_Immediate);
+            CMP();
             break;
         case 0xCA:
             DEX();
+            break;
+        case 0xCC:
+            address_load(AddressingType_Absolute);
+            CPY();
+            break;
+        case 0xCD:
+            address_load(AddressingType_Absolute);
+            CMP();
+            break;
+        case 0xCE:
+            address_load(AddressingType_Absolute);
+            DEC();
             break;
         case 0xD0:
             NIP();
             break;
         case 0xD1:
-            NIP();
+            address_load(AddressingType_IndirectZeroPageY);
+            CMP();
             break;
         case 0xD4:
             NIP();
             break;
         case 0xD5:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            CMP();
             break;
         case 0xD6:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            DEC();
             break;
         case 0xD8:
             CLD();
@@ -813,57 +1109,72 @@ int execute(void)
             NIP();
             break;
         case 0xE0:
-            NIP();
+            address_load(AddressingType_Immediate);
+            CPX();
             break;
         case 0xE1:
+            address_load(AddressingType_IndirectZeroPageX);
             NIP();
             break;
         case 0xE4:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            CPX();
             break;
         case 0xE5:
+            address_load(AddressingType_ZeroPage);
             NIP();
             break;
         case 0xE6:
-            NIP();
+            address_load(AddressingType_ZeroPage);
+            INC();
             break;
         case 0xE8:
             INX();
             break;
         case 0xE9:
+            address_load(AddressingType_Immediate);
             NIP();
             break;
         case 0xEA:
             NOP();
             break;
         case 0xEC:
-            NIP();
+            address_load(AddressingType_Absolute);
+            CPX();
             break;
         case 0xED:
+            address_load(AddressingType_Absolute);
             NIP();
             break;
         case 0xEE:
-            NIP();
+            address_load(AddressingType_Absolute);
+            INC();
             break;
         case 0xF0:
             NIP();
             break;
         case 0xF1:
+            address_load(AddressingType_IndirectZeroPageY);
             NIP();
             break;
         case 0xF5:
+            address_load(AddressingType_ZeroPageX);
+            SBC();
             NIP();
             break;
         case 0xF6:
-            NIP();
+            address_load(AddressingType_ZeroPageX);
+            INC();
             break;
         case 0xF8:
             SED();
             break;
         case 0xF9:
+            address_load(AddressingType_AbsoluteY);
             NIP();
             break;
         case 0xFD:
+            address_load(AddressingType_AbsoluteX);
             NIP();
             break;
         case 0xFE:
