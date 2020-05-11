@@ -46,16 +46,6 @@ static inline void NIP()
     assert(0);
 }
 
-void mem_write(uint16_t addr)
-{
-
-}
-
-void mem_read(uint16_t addr)
-{
-
-}
-
 void ADC(){}
 
 void AND(){}
@@ -66,44 +56,52 @@ void BIT(){}
 
 void BRK(){}
 
+
 /*
 *   Flag Instructions
 */
-
 void CLC() /// clear carry
 {
     cpu->reg.status_flag.C = false;
+    cpu->cycle += 2;
 }
 
 void CLI() /// clear interupt
 {
     cpu->reg.status_flag.I = false;
+    cpu->cycle += 2;
 }
 
 void CLV() /// clear overflow
 {
     cpu->reg.status_flag.V = false;
+    cpu->cycle += 2;
 }
 
 void CLD() /// clear deciaml
 {
     cpu->reg.status_flag.D = false;
+    cpu->cycle += 2;
 }
 
 void SEC() /// set carry
 {
     cpu->reg.status_flag.C = true;
+    cpu->cycle += 2;
 }
 
 void SEI() /// set interupt
 {
     cpu->reg.status_flag.I = true;
+    cpu->cycle += 2;
 }
 
 void SED() // set decimal
 {
     cpu->reg.status_flag.D = true;
+    cpu->cycle += 2;
 }
+
 
 void CMP(){}
 
