@@ -7,7 +7,115 @@
 
 #include "cpu.h"
 
-static cpu_t *cpu = NULL;
+
+cpu_t *cpu = NULL;
+
+inline void tick(uint8_t c)
+{
+    assert(c > 0);
+    cpu->cycle += c;
+}
+
+uint8_t read8(uint16_t addr)
+{
+    tick(1);
+    return 0;
+}
+
+uint16_t read16(uint16_t addr)
+{
+    tick(2);
+    return 0;
+}
+
+void write8(uint16_t addr, uint8_t v)
+{
+    tick(1);
+}
+
+void write16(uint16_t addr, uint16_t v)
+{
+    tick(2);
+}
+
+/// https://youtu.be/fWqBmmPQP40?t=556
+void address_load(AddressingType type, bool page_cross)
+{
+    switch (type)
+    {
+        case AddressingType_Immediate:
+            cpu->oprand = cpu->reg.PC++;
+            break;
+        
+        case AddressingType_Absolute:
+            cpu->oprand = read16(cpu->reg.PC);
+            cpu->reg.PC += 2;
+            break;
+        
+        case AddressingType_AbsoluteX:
+            if (page_cross && (cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.X) & 0x0F00))
+            {
+                tick(1);
+            }
+
+            cpu->oprand = read16(cpu->reg.PC + cpu->reg.X);
+            cpu->reg.PC += 2;
+            break;
+
+        case AddressingType_AbsoluteY:
+            if (page_cross && (cpu->reg.PC & 0x0F00) != ((cpu->reg.PC + cpu->reg.Y) & 0x0F00))
+            {
+                tick(1);
+            }
+
+            cpu->oprand = read16(cpu->reg.PC + cpu->reg.Y);
+            cpu->reg.PC += 2;
+            break;
+
+        case AddressingType_ZeroPage:
+            cpu->oprand = read8(cpu->reg.PC++);
+            break;
+        
+        case AddressingType_ZeroPageX:
+        {
+            uint16_t addr = cpu->reg.PC + cpu->reg.X;
+            if (addr > 0xFF) addr -= 0xFF;
+            cpu->oprand = read8(addr);
+            ++cpu->reg.PC;
+            break;
+        }
+
+        case AddressingType_ZeroPageY:
+        {
+            uint16_t addr = cpu->reg.PC + cpu->reg.Y;
+            if (addr > 0xFF) addr -= 0xFF;
+            cpu->oprand = read8(addr);
+            ++cpu->reg.PC;
+            break;
+        }
+
+        case AddressingType_IndirectZeroPageX:
+        {
+            uint16_t addr = cpu->reg.PC + cpu->reg.X;
+            if (addr > 0xFF) addr -= 0xFF;
+            cpu->oprand = read8(read16(addr));
+            cpu->reg.PC += 2;
+            break;
+        }
+
+        // TODO: check if PC can be > 0xFF.
+        // Different to indirectX in that it does the lookup first, then adds Y.
+        case AddressingType_IndirectZeroPageY:
+        {
+            cpu->oprand = read8(read16(cpu->reg.PC) + cpu->reg.Y);
+            cpu->reg.PC += 2;
+            break;
+        }
+        default:
+            printf("INCORRECT ADDRESS TYPE: %u", type);
+            assert(0);
+    }
+}
 
 void cpu_reset()
 {
@@ -82,43 +190,43 @@ void BRK()
 void CLC() /// clear carry
 {
     cpu->reg.status_flag.C = false;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void CLI() /// clear interupt
 {
     cpu->reg.status_flag.I = false;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void CLV() /// clear overflow
 {
     cpu->reg.status_flag.V = false;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void CLD() /// clear deciaml
 {
     cpu->reg.status_flag.D = false;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void SEC() /// set carry
 {
     cpu->reg.status_flag.C = true;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void SEI() /// set interupt
 {
     cpu->reg.status_flag.I = true;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void SED() // set decimal
 {
     cpu->reg.status_flag.D = true;
-    cpu->cycle += 2;
+    tick(2);
 }
 
 
@@ -193,7 +301,7 @@ void LSR()
 
 void NOP()
 {
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void ORA()
@@ -218,7 +326,7 @@ void TAX()
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void TXA()
@@ -228,7 +336,7 @@ void TXA()
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void TSX()
@@ -238,14 +346,14 @@ void TSX()
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void TXS()
 {
     cpu->reg.SP = cpu->reg.X;
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void DEX()
@@ -255,7 +363,7 @@ void DEX()
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void INX()
@@ -265,7 +373,7 @@ void INX()
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void TAY()
@@ -275,7 +383,7 @@ void TAY()
     cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
     cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void TYA()
@@ -285,7 +393,7 @@ void TYA()
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void DEY()
@@ -295,7 +403,7 @@ void DEY()
     cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
     cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 void INY()
@@ -305,7 +413,7 @@ void INY()
     cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
     cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
 
-    cpu->cycle += 2;
+    tick(2);
 }
 
 

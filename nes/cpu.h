@@ -7,6 +7,19 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum
+{
+    AddressingType_Immediate,
+    AddressingType_Absolute,
+    AddressingType_AbsoluteX,
+    AddressingType_AbsoluteY,
+    AddressingType_ZeroPage,
+    AddressingType_ZeroPageX,
+    AddressingType_ZeroPageY,
+    AddressingType_IndirectZeroPageX,
+    AddressingType_IndirectZeroPageY,
+} AddressingType;
+
 typedef struct
 {
     union
@@ -34,7 +47,10 @@ typedef struct
 typedef struct
 {
     cpu_register_t reg;
+
     uint32_t cycle;
+
+    uint16_t oprand; /// can be 1 or 2 bytes depending on the addressing.
     uint8_t opcode;
 
     bool halt;

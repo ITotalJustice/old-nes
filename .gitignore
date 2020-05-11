@@ -56,3 +56,4 @@ roms/
 testroms/
 *.ini
 t-nes
+*.txt
