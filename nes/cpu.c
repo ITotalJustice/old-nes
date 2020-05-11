@@ -11,15 +11,24 @@ static cpu_t *cpu = NULL;
 
 void cpu_reset()
 {
-    assert(cpu);
-    memset(cpu, 0, sizeof(cpu_t));
+    cpu->reg.SP -= 3;
+    cpu->reg.status_flag.I = true;
+}
+
+void cpu_power_up()
+{
+    cpu->reg.P = 0x34;
+    cpu->reg.A = 0;
+    cpu->reg.X = 0;
+    cpu->reg.Y = 0;
+    cpu->reg.SP = 0xFD;
 }
 
 int cpu_init()
 {
     cpu = malloc(sizeof(cpu_t));
     assert(cpu);
-    cpu_reset();
+    memset(cpu, 0, sizeof(cpu_t));
 
     return 0;
 }
