@@ -1,0 +1,6 @@
+[submodule "libs/imgui"]
+	path = libs/imgui
+	url = https://github.com/ITotalJustice/imgui.git
+[submodule "libs/imgui_club"]
+	path = libs/imgui_club
+	url = https://github.com/ocornut/imgui_club.git
