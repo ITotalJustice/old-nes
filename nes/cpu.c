@@ -134,6 +134,59 @@ void NOP()
 
 void ORA(){}
 
+
+/*
+*   Register Instructions.
+*/
+void TAX()
+{
+    cpu->reg.X = cpu->reg.A;
+    cpu->cycle += 2;
+}
+
+void TXA()
+{
+    cpu->reg.A = cpu->reg.X;
+    cpu->cycle += 2;
+}
+
+void DEX()
+{
+    --cpu->reg.X;
+    cpu->cycle += 2;
+}
+
+void INX()
+{
+    ++cpu->reg.X;
+    cpu->cycle += 2;
+}
+
+void TAY()
+{
+    cpu->reg.Y = cpu->reg.A;
+    cpu->cycle += 2;
+}
+
+void TYA()
+{
+    cpu->reg.A = cpu->reg.Y;
+    cpu->cycle += 2;
+}
+
+void DEY()
+{
+    --cpu->reg.Y;
+    cpu->cycle += 2;
+}
+
+void INY()
+{
+    ++cpu->reg.Y;
+    cpu->cycle += 2;
+}
+
+
 void ROL(){}
 
 void ROR(){}
@@ -365,10 +418,10 @@ int execute(void)
             NIP();
             break;
         case 0x88:
-            NIP();
+            DEY();
             break;
         case 0x8A:
-            NIP();
+            TXA();
             break;
         case 0x8C:
             NIP();
@@ -395,7 +448,7 @@ int execute(void)
             NIP();
             break;
         case 0x98:
-            NIP();
+            TYA();
             break;
         case 0x99:
             NIP();
@@ -416,13 +469,13 @@ int execute(void)
             NIP();
             break;
         case 0xA8:
-            NIP();
+            TAY();
             break;
         case 0xA9:
             NIP();
             break;
         case 0xAA:
-            NIP();
+            TAX();
             break;
         case 0xAC:
             NIP();
@@ -482,13 +535,13 @@ int execute(void)
             NIP();
             break;
         case 0xC8:
-            NIP();
+            INY();
             break;
         case 0xC9:
             NIP();
             break;
         case 0xCA:
-            NIP();
+            DEX();
             break;
         case 0xD0:
             NIP();
@@ -533,13 +586,13 @@ int execute(void)
             NIP();
             break;
         case 0xE8:
-            NIP();
+            INX();
             break;
         case 0xE9:
             NIP();
             break;
         case 0xEA:
-            NIP();
+            NOP();
             break;
         case 0xEC:
             NIP();
