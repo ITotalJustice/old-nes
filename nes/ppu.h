@@ -27,7 +27,7 @@ typedef struct
 
 typedef struct
 {
-    ppu_pattern_table_tile_t tile[256] // 256 tiles.
+    ppu_pattern_table_tile_t tile[256]; // 256 tiles.
 } ppu_pattern_table_t;
 
 typedef struct

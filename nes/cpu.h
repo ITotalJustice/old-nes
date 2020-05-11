@@ -17,8 +17,7 @@ typedef struct
             uint8_t Z:1; /// zero
             uint8_t I:1; /// interrupt disable
             uint8_t D:1; /// decimal
-            uint8_t B:1; /// <no effect>
-            uint8_t U:1; /// <no effect>
+            uint8_t B:2; /// <no effect>
             uint8_t V:1; /// overflow
             uint8_t N:1; /// negative
         } status_flag;

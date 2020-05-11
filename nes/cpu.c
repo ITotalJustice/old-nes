@@ -46,15 +46,34 @@ static inline void NIP()
     assert(0);
 }
 
-void ADC(){}
 
-void AND(){}
+/*
+*   ALU. 
+*/
+void ADC()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+}
 
-void ASL(){}
+void AND()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+}
+
+void ASL()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+}
 
 void BIT(){}
 
-void BRK(){}
+void BRK()
+{
+    cpu->reg.status_flag.B = true;
+}
 
 
 /*
@@ -103,37 +122,91 @@ void SED() // set decimal
 }
 
 
-void CMP(){}
+void CMP()
+{
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+}
 
-void CPX(){}
+void CPX()
+{
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
-void CPY(){}
+void CPY()
+{
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
-void DEC(){}
+void DEC()
+{
+    /*
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    */
+}
 
-void EOR(){}
+void EOR()
+{
+    /*
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    */
+}
 
-void INC(){}
+void INC()
+{
+    /*
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    */
+}
 
 void JMP(){}
 
 void JSR(){}
 
-void LDA(){}
+void LDA()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
-void LDX(){}
+void LDX()
+{
+    cpu->reg.status_flag.Z = cpu->reg.X == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1;
+}
 
-void LDY(){}
+void LDY()
+{
+    cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1;
+}
 
-void LSR(){}
+void LSR()
+{
+    /*
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+    */
+}
 
 void NOP()
 {
     cpu->cycle += 2;
 }
 
-void ORA(){}
+void ORA()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
+void PLA()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
 /*
 *   Register Instructions.
@@ -141,61 +214,122 @@ void ORA(){}
 void TAX()
 {
     cpu->reg.X = cpu->reg.A;
+
+    cpu->reg.status_flag.Z = cpu->reg.X == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void TXA()
 {
     cpu->reg.A = cpu->reg.X;
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+
+    cpu->cycle += 2;
+}
+
+void TSX()
+{
+    cpu->reg.X = cpu->reg.SP;
+
+    cpu->reg.status_flag.Z = cpu->reg.X == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
+
+    cpu->cycle += 2;
+}
+
+void TXS()
+{
+    cpu->reg.SP = cpu->reg.X;
+
     cpu->cycle += 2;
 }
 
 void DEX()
 {
     --cpu->reg.X;
+
+    cpu->reg.status_flag.Z = cpu->reg.X == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void INX()
 {
     ++cpu->reg.X;
+
+    cpu->reg.status_flag.Z = cpu->reg.X == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.X >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void TAY()
 {
     cpu->reg.Y = cpu->reg.A;
+
+    cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void TYA()
 {
     cpu->reg.A = cpu->reg.Y;
+
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void DEY()
 {
     --cpu->reg.Y;
+
+    cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 void INY()
 {
     ++cpu->reg.Y;
+
+    cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.Y >> 7) == 1; 
+
     cpu->cycle += 2;
 }
 
 
-void ROL(){}
+void ROL()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
-void ROR(){}
+void ROR()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    //cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;
+}
 
 void RTI(){}
 
 void RTS(){}
 
-void SBC(){}
+void SBC()
+{
+    cpu->reg.status_flag.Z = cpu->reg.A == 0; 
+    cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1;    
+}
 
 void STA(){}
 
@@ -454,7 +588,7 @@ int execute(void)
             NIP();
             break;
         case 0x9A:
-            NIP();
+            TXS();
             break;
         case 0xA0:
             NIP();
@@ -508,7 +642,7 @@ int execute(void)
             NIP();
             break;
         case 0xBA:
-            NIP();
+            TSX();
             break;
         case 0xBC:
             NIP();
