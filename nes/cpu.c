@@ -66,6 +66,45 @@ void BIT(){}
 
 void BRK(){}
 
+/*
+*   Flag Instructions
+*/
+
+void CLC() /// clear carry
+{
+    cpu->reg.status_flag.C = false;
+}
+
+void CLI() /// clear interupt
+{
+    cpu->reg.status_flag.I = false;
+}
+
+void CLV() /// clear overflow
+{
+    cpu->reg.status_flag.V = false;
+}
+
+void CLD() /// clear deciaml
+{
+    cpu->reg.status_flag.D = false;
+}
+
+void SEC() /// set carry
+{
+    cpu->reg.status_flag.C = true;
+}
+
+void SEI() /// set interupt
+{
+    cpu->reg.status_flag.I = true;
+}
+
+void SED() // set decimal
+{
+    cpu->reg.status_flag.D = true;
+}
+
 void CMP(){}
 
 void CPX(){}
@@ -148,7 +187,7 @@ int execute(void)
             NIP();
             break;
         case 0x18:
-            NIP();
+            CLC();
             break;
         case 0x1E:
             NIP();
@@ -196,7 +235,7 @@ int execute(void)
             NIP();
             break;
         case 0x38:
-            NIP();
+            SEC();
             break;
         case 0x39:
             NIP();
@@ -250,7 +289,7 @@ int execute(void)
             NIP();
             break;
         case 0x58:
-            NIP();
+            CLI();
             break;
         case 0x59:
             NIP();
@@ -304,7 +343,7 @@ int execute(void)
             NIP();
             break;
         case 0x78:
-            NIP();
+            SEI();
             break;
         case 0x79:
             NIP();
@@ -412,7 +451,7 @@ int execute(void)
             NIP();
             break;
         case 0xB8:
-            NIP();
+            CLV();
             break;
         case 0xB9:
             NIP();
@@ -469,7 +508,7 @@ int execute(void)
             NIP();
             break;
         case 0xD8:
-            NIP();
+            CLD();
             break;
         case 0xD9:
             NIP();
@@ -526,7 +565,7 @@ int execute(void)
             NIP();
             break;
         case 0xF8:
-            NIP();
+            SED();
             break;
         case 0xF9:
             NIP();
