@@ -11,10 +11,7 @@
 #include <GL/gl3w.h>
 
 #include "ui.hpp"
-#include "../nes/cpu.h"
-#include "../nes/cpu.h"
-#include "../nes/cpu.h"
-#include "../nes/cpu.h"
+#include "../nes/nes.h"
 
 static SDL_Window *window = {0};
 static SDL_GLContext gl_context;
@@ -64,9 +61,16 @@ void gfx_exit()
     SDL_Quit();
 }
 
+static bool loaded_rom = false;
+
 static void file_menu()
 {
-    if (ImGui::MenuItem("Open", "Ctrl+O")) {}
+    if (ImGui::MenuItem("Open", "Ctrl+O"))
+    {
+        nes_loadrom("testroms/nestest.nes");
+        cpu_power_up();
+        loaded_rom = true;
+    }
     if (ImGui::BeginMenu("Open Recent"))
     {
         ImGui::MenuItem("game1.ch8");
@@ -164,20 +168,69 @@ void gfx_menubar()
     ImGui::EndMainMenuBar();
 }
 
-void gfx()
+void gfx_start()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(window);
     ImGui::NewFrame();
 
     gfx_menubar();
+}
 
+void gfx_end()
+{
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     SDL_GL_SwapWindow(window);
+}
+
+void gfx_debug()
+{
+    ImGui::Begin("Debug Time");
+    {
+        static int breakpoint = 0;
+        static bool run = false;
+        cpu_t *cpu = cpu_debug_get();
+
+        if (run)
+        {
+            if (cpu->opcode == breakpoint)
+            {
+                run = false;
+            }
+            else
+            cpu_debug_step();
+        }
+
+        ImGui::Text("Debug TIME! %s", loaded_rom ? "ROM LOADED" : "NA");
+        ImGui::Separator();
+
+        if (ImGui::Button("Step"))
+        {
+            cpu_debug_step();
+        }
+
+        if (ImGui::Button("Run"))
+        {
+            run = true;
+        }
+
+        ImGui::InputInt("set breakpoint", &breakpoint);
+
+        ImGui::Text("Opcode 0x%X", cpu->opcode);
+        ImGui::SameLine();
+        ImGui::Text("Oprand 0x%X", cpu->oprand);
+        ImGui::Separator();
+
+        ImGui::Text("PC: 0x%X", cpu->reg.PC);
+        ImGui::SameLine();
+        ImGui::Text("SP: 0x%X", cpu->reg.SP);
+        ImGui::Separator();
+    }
+    ImGui::End();
 }
 
 void ui()
@@ -203,7 +256,11 @@ void ui()
             }
         }
 
-        gfx();
+        gfx_start();
+
+        gfx_debug();
+
+        gfx_end();
     }
 
     gfx_exit();

@@ -6,6 +6,11 @@ extern "C" {
 
 #include <stdint.h>
 
+#include "cpu.h"
+#include "mmu.h"
+#include "apu.h"
+#include "mmu.h"
+
 
 enum
 {
@@ -67,7 +72,7 @@ enum
 
 typedef struct
 {
-    uint8_t id[0x4];
+    char id[0x4];
     uint8_t prg_rom;
     uint8_t chr_rom;
     
@@ -154,6 +159,7 @@ int nes_init();
 int nes_reset();
 void nes_exit();
 
+int nes_loadrom(const char *path);
 
 #ifdef __cplusplus
 }

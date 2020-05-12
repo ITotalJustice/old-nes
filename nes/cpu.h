@@ -9,6 +9,7 @@ extern "C" {
 
 typedef enum
 {
+    AddressingType_Relative,
     AddressingType_Immediate,
     AddressingType_Absolute,
     AddressingType_AbsoluteX,
@@ -54,9 +55,15 @@ typedef struct
     uint8_t opcode;
 } cpu_t;
 
+void cpu_power_up();
 void cpu_reset();
 int cpu_init();
 void cpu_exit();
+
+
+/// debug
+void cpu_debug_step();
+cpu_t *cpu_debug_get();
 
 #ifdef __cplusplus
 }
