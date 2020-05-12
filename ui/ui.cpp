@@ -202,6 +202,7 @@ void gfx_debug()
                 run = false;
             }
             else
+            for (int i =0; i < 1000; i++)
             cpu_debug_step();
         }
 

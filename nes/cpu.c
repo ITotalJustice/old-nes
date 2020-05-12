@@ -189,7 +189,7 @@ void ADC()
     uint8_t old_carry_flag = cpu->reg.status_flag.C;
     uint8_t old_a_value = cpu->reg.A;
     uint8_t v = read8(cpu->oprand);
-    cpu->reg.status_flag.C = cpu->reg.A + v + cpu->reg.status_flag.C > 0xFF;
+    cpu->reg.status_flag.C = (cpu->reg.A + v + cpu->reg.status_flag.C) > 0xFF;
     cpu->reg.A += v + old_carry_flag;
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0;
@@ -199,7 +199,7 @@ void ADC()
 
 void AND()
 {
-    cpu->reg.A &= cpu->oprand;
+    cpu->reg.A &= read8(cpu->oprand);
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = (cpu->reg.A >> 7) == 1; 
@@ -244,14 +244,15 @@ void BIT()
 {
     uint8_t v = read8(cpu->oprand);
 
-    cpu->reg.status_flag.Z = (cpu->reg.A & v) == 1;
-    cpu->reg.status_flag.V = (v & 0x40) >> 6;
+    cpu->reg.status_flag.Z = (cpu->reg.A & v) == 0;
+    cpu->reg.status_flag.V = (v & 0x40) ? 1 : 0;//>> 6;
     cpu->reg.status_flag.N = v >> 7;
 }
 
 void BRK()
 {
     cpu->reg.status_flag.B = true;
+    assert(0);
 }
 
 
