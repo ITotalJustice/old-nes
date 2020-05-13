@@ -48,6 +48,34 @@ typedef enum
     CPUMemMap_ED_PPURegMirror   = 0x3FFF,
 } CPUMemMap;
 
+typedef enum
+{
+    CPURegMemMap_SQ1_VOL = 0x4000,
+    CPURegMemMap_SQ1_SWEEP,
+    CPURegMemMap_SQ1_LO,
+    CPURegMemMap_SQ1_HI,
+    CPURegMemMap_SQ2_VOL,
+    CPURegMemMap_SQ2_SWEEP,
+    CPURegMemMap_SQ2_LO,
+    CPURegMemMap_SQ2_HI,
+    CPURegMemMap_TRI_LINEAR,
+    CPURegMemMap_unused0,
+    CPURegMemMap_TRI_LO,
+    CPURegMemMap_TRI_HI,
+    CPURegMemMap_NOISE_VOL,
+    CPURegMemMap_unused1,
+    CPURegMemMap_NOISE_LO,
+    CPURegMemMap_NOISE_HI,
+    CPURegMemMap_DMC_FREQ,
+    CPURegMemMap_DMC_RAW,
+    CPURegMemMap_DMC_START,
+    CPURegMemMap_DMC_LEN,
+    CPURegMemMap_OAMDMA,
+    CPURegMemMap_SND_CHN,
+    CPURegMemMap_JOY1,
+    CPURegMemMap_JOY2,
+} CPURegMemMap;
+
 uint8_t mmu_read8(uint16_t addr)
 {
     switch (addr)
@@ -66,12 +94,38 @@ uint8_t mmu_read8(uint16_t addr)
         case CPUMemMap_ST_PPURegMirror ... CPUMemMap_ED_PPURegMirror:
             return ppu_read_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)));
 
-        /*
         /// sound / joypad / io
         case 0x4000 ... 0x401F:
-            printf("sound joy io read\n");
-            assert(0);
-        */
+            switch (addr)
+            {
+                case CPURegMemMap_SQ1_VOL:      apu_read_register(addr);
+                case CPURegMemMap_SQ1_SWEEP:    apu_read_register(addr);
+                case CPURegMemMap_SQ1_LO:       apu_read_register(addr);
+                case CPURegMemMap_SQ1_HI:       apu_read_register(addr);
+                case CPURegMemMap_SQ2_VOL:      apu_read_register(addr);
+                case CPURegMemMap_SQ2_SWEEP:    apu_read_register(addr);
+                case CPURegMemMap_SQ2_LO:       apu_read_register(addr);
+                case CPURegMemMap_SQ2_HI:       apu_read_register(addr);
+                case CPURegMemMap_TRI_LINEAR:   apu_read_register(addr);
+                case CPURegMemMap_unused0:      apu_read_register(addr);
+                case CPURegMemMap_TRI_LO:       apu_read_register(addr);
+                case CPURegMemMap_TRI_HI:       apu_read_register(addr);
+                case CPURegMemMap_NOISE_VOL:    apu_read_register(addr);
+                case CPURegMemMap_unused1:      apu_read_register(addr);
+                case CPURegMemMap_NOISE_LO:     apu_read_register(addr);
+                case CPURegMemMap_NOISE_HI:     apu_read_register(addr);
+                case CPURegMemMap_DMC_FREQ:     apu_read_register(addr);
+                case CPURegMemMap_DMC_RAW:      apu_read_register(addr);
+                case CPURegMemMap_DMC_START:    apu_read_register(addr);
+                case CPURegMemMap_DMC_LEN:      apu_read_register(addr);
+                case CPURegMemMap_OAMDMA:       ppu_read_register(addr);
+                case CPURegMemMap_SND_CHN:      apu_read_register(addr);
+                case CPURegMemMap_JOY1:         /// joy1
+                case CPURegMemMap_JOY2:         /// joy2
+                default:
+                    printf("READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    assert(0);
+            }
 
         /// cart prg-ram OR prg-rom
         case 0x6000 ... 0x7FFF:
@@ -118,11 +172,39 @@ void mmu_write8(uint16_t addr, uint8_t v)
             ppu_write_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)), v);
             break;
 
-        /*
         /// sound / joypad / io
         case 0x4000 ... 0x401F:
-            break;
-            */
+            switch (addr)
+            {
+                case CPURegMemMap_SQ1_VOL:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_SWEEP:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_VOL:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_SWEEP:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_LINEAR:   apu_write_register(addr, v);    break;
+                case CPURegMemMap_unused0:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_VOL:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_unused1:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_LO:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_HI:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_FREQ:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_RAW:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_START:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_LEN:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_OAMDMA:       ppu_write_register(addr, v);    break;
+                case CPURegMemMap_SND_CHN:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_JOY1:         /// joystick strobe.
+                case CPURegMemMap_JOY2:         apu_write_register(addr, v);    break;
+                default:
+                    printf("READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    assert(0);
+                    break;
+            }
 
         /// cart prg-ram OR prg-rom
         case 0x6000 ... 0x7FFF:
