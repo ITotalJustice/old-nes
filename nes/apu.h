@@ -29,34 +29,165 @@ typedef enum
 
 typedef struct
 {
-    uint8_t byte0;
-    uint8_t byte1;
-    uint8_t byte2;
-    uint8_t byte3;
+    union
+    {
+        struct
+        {
+            uint8_t vol:4;
+            uint8_t constant:1;
+            uint8_t loop:1;
+            uint8_t duty:2;
+        } _0;
+        uint8_t byte0;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t shift:3;
+            uint8_t negate:1;
+            uint8_t period:3;
+            uint8_t enabled:1;
+        } _1;
+        uint8_t byte1;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t timer_low;
+        } _2;
+        uint8_t byte2;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t timer_high:3;
+            uint8_t length_counter:5;
+        } _3;
+        uint8_t byte3;
+    };
 } apu_pulse_channel_t; // TODO: break these down into bits;
 
 typedef struct
 {
-    uint8_t byte0;
-    uint8_t byte1;
-    uint8_t byte2;
-    uint8_t byte3;
+    union
+    {
+        struct
+        {
+            uint8_t linear_counter:7;
+            uint8_t counter:1;
+        } _0;
+        uint8_t byte0;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t unused;
+        } _1;
+        uint8_t byte1;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t timer_low;
+        } _2;
+        uint8_t byte2;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t timer_high:3;
+            uint8_t length_counter:5;
+        } _3;
+        uint8_t byte3;
+    };
 } apu_triangle_channel_t;
 
 typedef struct
 {
-    uint8_t byte0;
-    uint8_t byte1;
-    uint8_t byte2;
-    uint8_t byte3;
+    union
+    {
+        struct
+        {
+            uint8_t volume:4;
+            uint8_t constant:1;
+            uint8_t loop:1;
+            uint8_t unused:2;
+        } _0;
+        uint8_t byte0;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t unused;
+        } _1;
+        uint8_t byte1;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t period:4;
+            uint8_t unused:3;
+            uint8_t loop:1;
+        } _2;
+        uint8_t byte2;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t unused:3;
+            uint8_t length_counter:5;
+        } _3;
+        uint8_t byte3;
+    };
 } apu_noise_channel_t;
 
 typedef struct
 {
-    uint8_t byte0;
-    uint8_t byte1;
-    uint8_t byte2;
-    uint8_t byte3;
+    union
+    {
+        struct
+        {
+            uint8_t frequency:4;
+            uint8_t unused:2;
+            uint8_t loop:1;
+            uint8_t irq:1;
+        } _0;
+        uint8_t byte0;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t unused:1;
+            uint8_t load_counter:7;
+        } _1;
+        uint8_t byte1;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t sample_addr;
+        } _2;
+        uint8_t byte2;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t sample_length;
+        } _3;
+        uint8_t byte3;
+    };
 } apu_dmc_channel_t;
 
 typedef struct
@@ -66,8 +197,38 @@ typedef struct
     apu_triangle_channel_t triangle_channel;
     apu_noise_channel_t noise_channel;
     apu_dmc_channel_t dmc_channel;
-    uint8_t status;
-    uint8_t frame_counter;
+
+    union
+    {
+        struct
+        {
+            uint8_t pulse1:1;
+            uint8_t pulse2:1;
+            uint8_t triangle:1;
+            uint8_t noise:1;
+            uint8_t dmc:1;
+            uint8_t unused:3;
+        } _status_write;
+        struct
+        {
+            uint8_t length_counter:4;
+            uint8_t dmc:1;
+            uint8_t unused:1;
+            uint8_t interrupt_frame:1;
+            uint8_t interrupt_dmc:1;
+        } _status_read;
+        uint8_t status;
+    };
+    union
+    {
+        struct
+        {
+            uint8_t unused:6;
+            uint8_t irq:1;
+            uint8_t mode:1;
+        } _frame_counter;
+        uint8_t frame_counter;
+    };
 } apu_registers_t;
 
 typedef struct
