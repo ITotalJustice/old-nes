@@ -8,8 +8,9 @@ extern "C" {
 
 typedef struct
 {
-    uint8_t ram[0x800];
-    uint8_t mirror_ram[0x800];
+    uint8_t ram[0x2000];
+    //uint8_t ram[0x800];
+    //uint8_t mirror_ram[0x800];
 
     uint8_t cart_ram[0x4000];
     uint8_t cart_mem[0x4000];

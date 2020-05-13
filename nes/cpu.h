@@ -9,17 +9,20 @@ extern "C" {
 
 typedef enum
 {
-    AddressingType_Relative,
-    AddressingType_Immediate,
-    AddressingType_Absolute,
-    AddressingType_AbsoluteX,
-    AddressingType_AbsoluteY,
-    AddressingType_ZeroPage,
-    AddressingType_ZeroPageX,
-    AddressingType_ZeroPageY,
-    AddressingType_IndirectZeroPageX,
-    AddressingType_IndirectZeroPageY,
-} AddressingType;
+    AddrType_Acc,
+    AddrType_Imp,
+    AddrType_Rel,
+    AddrType_Imm,
+    AddrType_Abs,
+    AddrType_AbsX,
+    AddrType_AbsY,
+    AddrType_ZP,
+    AddrType_ZPX,
+    AddrType_ZPY,
+    AddrType_Ind,
+    AddrType_IndZPX,
+    AddrType_IndZPY,
+} AddrType;
 
 typedef struct
 {
@@ -31,7 +34,8 @@ typedef struct
             uint8_t Z:1; /// zero
             uint8_t I:1; /// interrupt disable
             uint8_t D:1; /// decimal
-            uint8_t B:2; /// <no effect>
+            uint8_t B:1; /// <no effect>
+            uint8_t U:1; /// unkown.
             uint8_t V:1; /// overflow
             uint8_t N:1; /// negative
         } status_flag;
@@ -51,8 +55,18 @@ typedef struct
 
     uint32_t cycle;
 
-    uint16_t oprand; /// can be 1 or 2 bytes depending on the addressing.
+    union
+    {
+        struct
+        {
+            uint8_t low;
+            uint8_t high;
+        } oprand_byte;
+        uint16_t oprand;
+    };
     uint8_t opcode;
+
+    bool illegal_op;
 } cpu_t;
 
 void cpu_power_up();

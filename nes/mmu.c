@@ -9,7 +9,7 @@
 #include "cpu.h"
 #include "ppu.h"
 
-static mmu_t *mmu = NULL;
+mmu_t *mmu = NULL;
 
 void mmu_reset()
 {
@@ -37,11 +37,15 @@ uint8_t mmu_read8(uint16_t addr)
 {
     switch (addr)
     {
+        case 0x0000 ... 0x1FFF:
+            return mmu->ram[addr];
+            /*
         case 0x0000 ... 0x07FF:
             return mmu->ram[addr];
         
+            //return mmu->ram[addr - (0x800 * (addr & 0x800))]
         case 0x0800 ... 0x1FFF:
-            return mmu->mirror_ram[addr - 0x800];
+            return mmu->mirror_ram[addr - 0x800];*/
         
         /// ppu reg
         case 0x2000 ... 0x2007:
@@ -51,6 +55,9 @@ uint8_t mmu_read8(uint16_t addr)
         /*
         /// ppu reg mirrored...alot
         case 0x2008 ... 0x3FFF:
+            //return (ppu_reg(addr - (0x2008 + (0x8 * (addr & 0x8))))
+            OR
+            // return (ppu_reg(addr - (0x8 * (addr & 0x8)))
             printf("ppu reg mirror read\n");
             assert(0);
 
@@ -69,7 +76,7 @@ uint8_t mmu_read8(uint16_t addr)
             return mmu->cart_mem[addr - 0x8000];
 
         case 0xC000 ... 0xFFFF:
-            return mmu->cart_mem_mirror[addr - 0xC000];
+            return mmu->cart_mem[addr - 0xC000];
 
         default:
             printf("UNKOWN READ MEM ADDRESS 0x%X\n", addr);
@@ -80,13 +87,17 @@ uint8_t mmu_read8(uint16_t addr)
 
 uint16_t mmu_read16(uint16_t addr)
 {
-    return (mmu_read8(addr + 1) << 8) | mmu_read8(addr); 
+    return (mmu_read8(addr)) | (mmu_read8(addr + 1) << 8); 
 }
 
 void mmu_write8(uint16_t addr, uint8_t v)
 {
     switch (addr)
     {
+        case 0x0000 ... 0x1FFF:
+            mmu->ram[addr] = v;
+            break;
+        /*
         case 0x0000 ... 0x07FF:
             mmu->ram[addr] = v;
             mmu->mirror_ram[addr] = v;
@@ -95,7 +106,7 @@ void mmu_write8(uint16_t addr, uint8_t v)
         case 0x0800 ... 0x1FFF:
             mmu->mirror_ram[addr - 0x800] = v;
             mmu->ram[addr - 0x800] = v;
-            break;
+            break;*/
 
         /*
         /// ppu reg
@@ -122,7 +133,7 @@ void mmu_write8(uint16_t addr, uint8_t v)
             break;
 
         case 0xC000 ... 0xFFFF:
-            mmu->cart_mem_mirror[addr - 0xC000] = v;
+            mmu->cart_mem[addr - 0xC000] = v;
             break;
 
         default:
@@ -133,6 +144,7 @@ void mmu_write8(uint16_t addr, uint8_t v)
 
 void mmu_write16(uint16_t addr, uint16_t v)
 {
+    /// LSB first then MSB.
     mmu_write8(addr, v & 0xFF);
     mmu_write8(addr + 1, v >> 8);
 }

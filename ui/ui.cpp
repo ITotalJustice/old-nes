@@ -191,9 +191,10 @@ void gfx_debug()
 {
     ImGui::Begin("Debug Time");
     {
-        static int breakpoint = 0;
+        static int breakpoint = 1;
         static bool run = false;
         cpu_t *cpu = cpu_debug_get();
+        mmu_t *mmu = mem_get_mem();
 
         if (run)
         {
@@ -211,6 +212,7 @@ void gfx_debug()
 
         if (ImGui::Button("Step"))
         {
+            for (int i = 0; i < breakpoint; i++)
             cpu_debug_step();
         }
 
@@ -230,6 +232,13 @@ void gfx_debug()
         ImGui::SameLine();
         ImGui::Text("SP: 0x%X", cpu->reg.SP);
         ImGui::Separator();
+        
+        ImGui::BeginTabBar("test");
+        {
+            static MemoryEditor mem_edit_1;
+            mem_edit_1.DrawContents(mmu->ram, 0x2000, 0x0000);
+        }
+        ImGui::EndTabBar();
     }
     ImGui::End();
 }
