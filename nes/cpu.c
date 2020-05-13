@@ -100,11 +100,9 @@ static inline void addressing(AddrType type)
 
         case AddrType_Rel:
             cpu->oprand = cpu->reg.PC++;
-            //tick(1);
             break;
         case AddrType_Imm:
             cpu->oprand = cpu->reg.PC++;
-            //tick(1);
             break;
         
         case AddrType_Abs:
@@ -178,9 +176,6 @@ void cpu_reset()
     cpu->reg.status_flag.U = true;
 
     /// Set registers.
-    cpu->reg.A = false;
-    cpu->reg.X = false;
-    cpu->reg.Y = false;
     cpu->reg.SP -= 3;
     cpu->reg.PC = mmu_read16(0xFFFC);
 }
@@ -201,6 +196,7 @@ void cpu_power_up()
 
     /// TODO: REMOVE THIS
     /// This is for nestest auto.
+    cpu->reg.status_flag.D = true;
     cpu->cycle = 7;
     cpu->reg.PC = 0xC000;
 }
@@ -334,7 +330,7 @@ static inline void BRK()
 static inline void __BRANCH(bool cond)
 {
     int8_t v = read8(cpu->oprand);
-    if (cond)
+    if (cond == true)
     {
         page_cross(cpu->reg.PC, cpu->reg.PC + v);
         cpu->reg.PC += v;
