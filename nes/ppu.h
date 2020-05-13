@@ -71,14 +71,16 @@ typedef struct
     uint8_t oam_dma;    // w
 } ppu_registers_t;
 
+#define PATTERN_TABLE_PIXELS 16
 typedef struct
 {
-    uint8_t title[16];
+    uint8_t pixel[PATTERN_TABLE_PIXELS];
 } ppu_pattern_table_tile_t;
 
+#define PATTERN_TABLE_TILES 256
 typedef struct
 {
-    ppu_pattern_table_tile_t tile[256]; // 256 tiles.
+    ppu_pattern_table_tile_t tiles[PATTERN_TABLE_TILES];
 } ppu_pattern_table_t;
 
 typedef struct
@@ -86,15 +88,17 @@ typedef struct
     uint8_t b[64];
 } ppu_attribute_table_t;
 
+#define NAMETABLE_ROWS 30 * 32
 typedef struct
 {
-    uint8_t rows[30 * 32];  // 30 rows of 32 tiles.
+    uint8_t rows[NAMETABLE_ROWS];
     ppu_attribute_table_t attribute_table;
-} ppu_nametable_t; // 0x0400
+} ppu_nametable_t; /// 0x0400
 
+#define PALETTE_COLOURS 3
 typedef struct
 {
-    uint8_t colour[3]; // each palette has 3 colours.
+    uint8_t colour[PALETTE_COLOURS]; /// each palette has 3 colours.
 } ppu_palette_t;
 
 typedef struct
@@ -104,28 +108,26 @@ typedef struct
     ppu_palette_t background_palette0;
     ppu_palette_t background_palette1;
     ppu_palette_t background_palette2;
+    ppu_palette_t background_palette3;
 
     ppu_palette_t sprite_palette0;
     ppu_palette_t sprite_palette1;
     ppu_palette_t sprite_palette2;
+    ppu_palette_t sprite_palette3;
 } ppu_palettes_t;
 
 typedef struct
 {
-    ppu_pattern_table_t pattern_table0; // left
-    ppu_pattern_table_t pattern_table1; // right
+    ppu_pattern_table_t pattern_table0; /// left
+    ppu_pattern_table_t pattern_table1; /// right
 
     ppu_nametable_t nametable0;
     ppu_nametable_t nametable1;
     ppu_nametable_t nametable2;
     ppu_nametable_t nametable3;
-    
-    uint8_t mirror_x2000_0x2EFF[0x0F00];
 
     ppu_palettes_t palette_ram_indexes;
     //uint8_t palette_ram_indexes[0x0020];
-
-    uint8_t mirror_0x3F00_0x3F1F[0x00E0];
 } ppu_memory_map_t;
 
 typedef struct
@@ -137,7 +139,7 @@ typedef struct
         {
             uint8_t bank:1;
             uint8_t number:7; /// 0-254
-        } sprite_number_info;
+        } _sprite_number;
         uint8_t sprite_number;
     };
     union
@@ -149,7 +151,7 @@ typedef struct
             uint8_t priority:1; /// 0 = in front of bg. 1 = behind bg.
             uint8_t flip_horizontally:1;
             uint8_t flip_vertically:1;
-        } sprite_attribute_info;
+        } _sprite_attribute;
         uint8_t sprite_attribute;
     };
     uint8_t sprite_x;
