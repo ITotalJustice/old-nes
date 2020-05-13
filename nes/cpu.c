@@ -80,9 +80,9 @@ static inline void write16(uint16_t addr, uint16_t v)
     tick(2);
 }
 
-static inline bool page_cross(uint16_t a, uint16_t b)
+static inline void page_cross(uint16_t a, uint16_t b)
 {
-    return (a & 0x0F00) != (b & 0x0F00);
+    if ((a & 0x0F00) != (b & 0x0F00)) tick(1);
 }
 
 /// https://youtu.be/fWqBmmPQP40?t=556
@@ -93,17 +93,18 @@ static inline void addressing(AddrType type)
     {
         /// The oprand is either reg A or not needed.
         case AddrType_Acc:
+            tick(1);
             break;
         case AddrType_Imp:
             break;
 
         case AddrType_Rel:
             cpu->oprand = cpu->reg.PC++;
-            tick(1);
+            //tick(1);
             break;
         case AddrType_Imm:
             cpu->oprand = cpu->reg.PC++;
-            tick(1);
+            //tick(1);
             break;
         
         case AddrType_Abs:
@@ -113,14 +114,12 @@ static inline void addressing(AddrType type)
         
         /// Extra clock cycle if page crossed.
         case AddrType_AbsX:
-            if (page_cross(cpu->reg.PC, cpu->reg.PC + cpu->reg.X))
-                tick(1);
+            page_cross(cpu->reg.PC, cpu->reg.PC + cpu->reg.X);
             cpu->oprand = read16(cpu->reg.PC) + cpu->reg.X;
             cpu->reg.PC += 2;
             break;
         case AddrType_AbsY:
-            if (page_cross(cpu->reg.PC, cpu->reg.PC + cpu->reg.Y))
-                tick(1);
+            page_cross(cpu->reg.PC, cpu->reg.PC + cpu->reg.Y);
             cpu->oprand = read16(cpu->reg.PC) + cpu->reg.Y;
             cpu->reg.PC += 2;
             break;
@@ -156,12 +155,14 @@ static inline void addressing(AddrType type)
         case AddrType_IndZPX:
             cpu->oprand = read8(cpu->reg.PC++);
             cpu->oprand = (read8((uint8_t)(cpu->oprand + cpu->reg.X + 1)) << 8) | read8((uint8_t)(cpu->oprand + cpu->reg.X));
+            tick(2);
             break;
 
         // Different to indirectX in that it does the lookup first, then adds Y.
         case AddrType_IndZPY:
             cpu->oprand = read8(cpu->reg.PC++);
             cpu->oprand = ((read8((uint8_t)(cpu->oprand + 1)) << 8) | read8(cpu->oprand)) + cpu->reg.Y;
+            tick(2);
             break;
         
         default:
@@ -200,6 +201,7 @@ void cpu_power_up()
 
     /// TODO: REMOVE THIS
     /// This is for nestest auto.
+    cpu->cycle = 7;
     cpu->reg.PC = 0xC000;
 }
 
@@ -246,6 +248,8 @@ static inline void __ADC_SBC(uint8_t v)
         cpu->reg.status_flag.Z = cpu->reg.A == 0;
         cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
     }
+
+    tick(1);
 }
 
 static inline void ADC()
@@ -264,7 +268,9 @@ static inline void AND()
     cpu->reg.A &= read8(cpu->oprand);
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1; 
+    cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(1);
 }
 
 static inline void ASL_A()
@@ -274,7 +280,9 @@ static inline void ASL_A()
     cpu->reg.A <<= 1;
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
-    cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1; 
+    cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(2);
 }
 
 static inline void ASL()
@@ -290,6 +298,8 @@ static inline void ASL()
     cpu->reg.status_flag.C = RBIT7(v);
     cpu->reg.status_flag.Z = r == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void BIT()
@@ -299,12 +309,19 @@ static inline void BIT()
     cpu->reg.status_flag.Z = (cpu->reg.A & v) == 0;
     cpu->reg.status_flag.V = RBIT6(v) & 1;
     cpu->reg.status_flag.N = RBIT7(v);
+
+    tick(1);
 }
 
 static inline void BRK()
 {
+    /// TODO: Finish this op.
+    /// update tick count after finishing also.
+
     cpu->reg.status_flag.B = true;
     assert(0);
+
+    tick(7);
 }
 
 
@@ -313,76 +330,57 @@ static inline void BRK()
 */
 /// TODO: correct tick()
 /// all branch are 2 cycles, + 1 if taken, + 1 if page cross.
+
+static inline void __BRANCH(bool cond)
+{
+    int8_t v = read8(cpu->oprand);
+    if (cond)
+    {
+        page_cross(cpu->reg.PC, cpu->reg.PC + v);
+        cpu->reg.PC += v;
+        tick(1);
+    }
+    tick(1);
+}
+
 static inline void BCC()
 {
-    if (cpu->reg.status_flag.C == 0)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.C == 0);
 }
 
 static inline void BCS()
 {
-    if (cpu->reg.status_flag.C == 1)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.C == 1);
 }
 
 static inline void BEQ()
 {
-    if (cpu->reg.status_flag.Z == 1)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.Z == 1);
 }
 
 static inline void BNE()
 {
-    if (cpu->reg.status_flag.Z == 0)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.Z == 0);
 }
 
 static inline void BMI()
 {
-    if (cpu->reg.status_flag.N == 1)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.N == 1);
 }
 
 static inline void BPL()
 {
-    if (cpu->reg.status_flag.N == 0)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.N == 0);
 }
 
 static inline void BVS()
 {
-    if (cpu->reg.status_flag.V == 1)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.V == 1);
 }
 
 static inline void BVC()
 {
-    if (cpu->reg.status_flag.V == 0)
-    {
-        cpu->reg.PC += (int8_t)read8(cpu->oprand);
-    }
-    tick(2);
+    __BRANCH(cpu->reg.status_flag.V == 0);
 }
 
 
@@ -439,7 +437,9 @@ static inline void CMP()
 
     cpu->reg.status_flag.C = (cpu->reg.A >= v);
     cpu->reg.status_flag.Z = r == 0;
-    cpu->reg.status_flag.N = RBIT7(r) == 1; 
+    cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(1);
 }
 
 static inline void CPX()
@@ -449,7 +449,9 @@ static inline void CPX()
 
     cpu->reg.status_flag.C = (cpu->reg.X >= v);
     cpu->reg.status_flag.Z = r == 0;
-    cpu->reg.status_flag.N = RBIT7(r) == 1; 
+    cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(1);
 }
 
 static inline void CPY()
@@ -459,7 +461,9 @@ static inline void CPY()
 
     cpu->reg.status_flag.C = (cpu->reg.Y >= v);
     cpu->reg.status_flag.Z = r == 0;
-    cpu->reg.status_flag.N = RBIT7(r) == 1; 
+    cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(1);
 }
 
 static inline void DEC()
@@ -471,6 +475,8 @@ static inline void DEC()
 
     cpu->reg.status_flag.Z = r == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void EOR()
@@ -479,6 +485,8 @@ static inline void EOR()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(1);
 }
 
 static inline void INC()
@@ -490,6 +498,8 @@ static inline void INC()
 
     cpu->reg.status_flag.Z = r == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void LDA()
@@ -498,6 +508,8 @@ static inline void LDA()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(1);
 }
 
 static inline void LDX()
@@ -506,6 +518,8 @@ static inline void LDX()
 
     cpu->reg.status_flag.Z = cpu->reg.X == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.X) == 1;
+
+    tick(1);
 }
 
 static inline void LDY()
@@ -514,6 +528,8 @@ static inline void LDY()
 
     cpu->reg.status_flag.Z = cpu->reg.Y == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.Y) == 1;
+
+    tick(1);
 }
 
 static inline void LSR_A()
@@ -524,6 +540,8 @@ static inline void LSR_A()
     
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(2);
 }
 
 static inline void LSR()
@@ -536,6 +554,8 @@ static inline void LSR()
     cpu->reg.status_flag.C = v & 1;
     cpu->reg.status_flag.Z = r == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void NOP()
@@ -549,6 +569,8 @@ static inline void ORA()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(1);
 }
 
 
@@ -582,11 +604,13 @@ static inline uint16_t pull_stack16()
 static inline void JMP()
 {
     cpu->reg.PC = cpu->oprand;
+    tick(1);
 }
 
 static inline void PHA()
 {
     push_stack8(cpu->reg.A);
+    tick(2);
 }
 
 static inline void PHP()
@@ -594,6 +618,7 @@ static inline void PHP()
     /// breakpoint bit is set.
     /// http://nesdev.com/6502bugs.txt
     push_stack8(cpu->reg.P | BIT4);
+    tick(2);
 }
 
 static inline void PLA()
@@ -602,6 +627,8 @@ static inline void PLA()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(3);
 }
 
 static inline void PLP()
@@ -610,6 +637,8 @@ static inline void PLP()
 
     cpu->reg.P &= ~BIT4;
     cpu->reg.P |= BIT5;
+
+    tick(3);
 }
 
 /// JSR-RTS-RTI-BUG: http://nesdev.com/6502bugs.txt
@@ -619,6 +648,7 @@ static inline void JSR()
     /// This is *fixed* in RTS, but not in RTI.
     push_stack16(cpu->reg.PC - 1);
     cpu->reg.PC = cpu->oprand;
+    tick(2);
 }
 
 static inline void RTS()
@@ -752,6 +782,8 @@ static inline void ROL_A()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(2);
 }
 
 static inline void ROL()
@@ -764,6 +796,8 @@ static inline void ROL()
     cpu->reg.status_flag.C = RBIT7(v);
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void ROR_A()
@@ -775,6 +809,8 @@ static inline void ROR_A()
 
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
+
+    tick(2);
 }
 
 static inline void ROR()
@@ -787,21 +823,29 @@ static inline void ROR()
     cpu->reg.status_flag.C = v & 1;
     cpu->reg.status_flag.Z = cpu->reg.A == 0; 
     cpu->reg.status_flag.N = RBIT7(r) == 1;
+
+    tick(2);
 }
 
 static inline void STA()
 {
     write8(cpu->oprand, cpu->reg.A);
+
+    tick(1);
 }
 
 static inline void STX()
 {
     write8(cpu->oprand, cpu->reg.X);
+
+    tick(1);
 }
 
 static inline void STY()
 {
     write8(cpu->oprand, cpu->reg.Y);
+
+    tick(1);
 }
 
 
@@ -809,7 +853,7 @@ int execute(void)
 {
     /// 149 instructions so far...
 
-    cpu->opcode = read8(cpu->reg.PC);
+    cpu->opcode = mmu_read8(cpu->reg.PC);
 
     static int count = 0;
     printf("%04X   %02X %04X \tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u count:%d\n",
