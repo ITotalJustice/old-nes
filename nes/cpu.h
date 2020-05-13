@@ -66,7 +66,10 @@ typedef struct
     };
     uint8_t opcode;
 
-    bool illegal_op;
+    struct
+    {
+        uint64_t count;
+    } debug;
 } cpu_t;
 
 void cpu_power_up();

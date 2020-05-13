@@ -178,6 +178,12 @@ void cpu_reset()
     /// Set registers.
     cpu->reg.SP -= 3;
     cpu->reg.PC = mmu_read16(0xFFFC);
+
+    /// misc.
+    cpu->oprand = 0;
+    cpu->opcode = 0;
+    cpu->cycle = 0;
+    cpu->debug.count = 0;
 }
 
 void cpu_power_up()
@@ -193,6 +199,12 @@ void cpu_power_up()
     cpu->reg.Y = false;
     cpu->reg.SP = 0xFD;
     cpu->reg.PC = mmu_read16(0xFFFC);
+
+    /// misc.
+    cpu->oprand = 0;
+    cpu->opcode = 0;
+    cpu->cycle = 0;
+    cpu->debug.count = 0;
 
     /// TODO: REMOVE THIS
     /// This is for nestest auto.
@@ -851,11 +863,10 @@ int execute(void)
 
     cpu->opcode = mmu_read8(cpu->reg.PC);
 
-    static int count = 0;
-    printf("%04X   %02X %04X \tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u count:%d\n",
-    cpu->reg.PC, cpu->opcode, cpu->oprand, cpu->reg.A, cpu->reg.X, cpu->reg.Y, cpu->reg.P, cpu->reg.SP, cpu->cycle, count);
+    printf("%04X   %02X %04X \tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u count:%lu\n",
+    cpu->reg.PC, cpu->opcode, cpu->oprand, cpu->reg.A, cpu->reg.X, cpu->reg.Y, cpu->reg.P, cpu->reg.SP, cpu->cycle, cpu->debug.count);
 
-    count++;
+    cpu->debug.count++;
     cpu->reg.PC++;
 
     switch (cpu->opcode)
