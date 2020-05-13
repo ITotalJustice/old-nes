@@ -50,44 +50,44 @@
 
 cpu_t *cpu = NULL;
 
-inline void tick(uint8_t c)
+static inline void tick(uint8_t c)
 {
     assert(c > 0);
     cpu->cycle += c;
 }
 
-uint8_t read8(uint16_t addr)
+static inline uint8_t read8(uint16_t addr)
 {
     tick(1);
     return mmu_read8(addr);
 }
 
-uint16_t read16(uint16_t addr)
+static inline uint16_t read16(uint16_t addr)
 {
     tick(2);
     return mmu_read16(addr);
 }
 
-void write8(uint16_t addr, uint8_t v)
+static inline void write8(uint16_t addr, uint8_t v)
 {
     mmu_write8(addr, v);
     tick(1);
 }
 
-void write16(uint16_t addr, uint16_t v)
+static inline void write16(uint16_t addr, uint16_t v)
 {
     mmu_write16(addr, v);
     tick(2);
 }
 
-bool page_cross(uint16_t a, uint16_t b)
+static inline bool page_cross(uint16_t a, uint16_t b)
 {
     return (a & 0x0F00) != (b & 0x0F00);
 }
 
 /// https://youtu.be/fWqBmmPQP40?t=556
 /// http://archive.6502.org/books/mcs6500_family_hardware_manual.pdf
-void addressing(AddrType type)
+static inline void addressing(AddrType type)
 {
     switch (type)
     {
@@ -228,7 +228,7 @@ static inline void NIP()
 /*
 *   ALU. 
 */
-void __ADC_SBC(uint8_t v)
+static inline void __ADC_SBC(uint8_t v)
 {
     uint8_t old_carry_flag = cpu->reg.status_flag.C;
     uint8_t old_a_value = cpu->reg.A;
@@ -248,18 +248,18 @@ void __ADC_SBC(uint8_t v)
     }
 }
 
-void ADC()
+static inline void ADC()
 {
     __ADC_SBC(read8(cpu->oprand));
 }
 
-void SBC()
+static inline void SBC()
 {
     /// Comp the value for the reverse *big brain*
     __ADC_SBC(~read8(cpu->oprand));
 }
 
-void AND()
+static inline void AND()
 {
     cpu->reg.A &= read8(cpu->oprand);
 
@@ -267,7 +267,7 @@ void AND()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1; 
 }
 
-void ASL_A()
+static inline void ASL_A()
 {
     cpu->reg.status_flag.C = RBIT7(cpu->reg.A);
 
@@ -277,7 +277,7 @@ void ASL_A()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1; 
 }
 
-void ASL()
+static inline void ASL()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = v << 1;
@@ -292,7 +292,7 @@ void ASL()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void BIT()
+static inline void BIT()
 {
     uint8_t v = read8(cpu->oprand);
 
@@ -301,7 +301,7 @@ void BIT()
     cpu->reg.status_flag.N = RBIT7(v);
 }
 
-void BRK()
+static inline void BRK()
 {
     cpu->reg.status_flag.B = true;
     assert(0);
@@ -313,7 +313,7 @@ void BRK()
 */
 /// TODO: correct tick()
 /// all branch are 2 cycles, + 1 if taken, + 1 if page cross.
-void BCC()
+static inline void BCC()
 {
     if (cpu->reg.status_flag.C == 0)
     {
@@ -322,7 +322,7 @@ void BCC()
     tick(2);
 }
 
-void BCS()
+static inline void BCS()
 {
     if (cpu->reg.status_flag.C == 1)
     {
@@ -331,7 +331,7 @@ void BCS()
     tick(2);
 }
 
-void BEQ()
+static inline void BEQ()
 {
     if (cpu->reg.status_flag.Z == 1)
     {
@@ -340,7 +340,7 @@ void BEQ()
     tick(2);
 }
 
-void BNE()
+static inline void BNE()
 {
     if (cpu->reg.status_flag.Z == 0)
     {
@@ -349,7 +349,7 @@ void BNE()
     tick(2);
 }
 
-void BMI()
+static inline void BMI()
 {
     if (cpu->reg.status_flag.N == 1)
     {
@@ -358,7 +358,7 @@ void BMI()
     tick(2);
 }
 
-void BPL()
+static inline void BPL()
 {
     if (cpu->reg.status_flag.N == 0)
     {
@@ -367,7 +367,7 @@ void BPL()
     tick(2);
 }
 
-void BVS()
+static inline void BVS()
 {
     if (cpu->reg.status_flag.V == 1)
     {
@@ -376,7 +376,7 @@ void BVS()
     tick(2);
 }
 
-void BVC()
+static inline void BVC()
 {
     if (cpu->reg.status_flag.V == 0)
     {
@@ -389,50 +389,50 @@ void BVC()
 /*
 *   Flag Instructions
 */
-void CLC()
+static inline void CLC()
 {
     cpu->reg.status_flag.C = false;
     tick(2);
 }
 
-void CLI()
+static inline void CLI()
 {
     cpu->reg.status_flag.I = false;
     tick(2);
 }
 
-void CLV()
+static inline void CLV()
 {
     cpu->reg.status_flag.V = false;
     tick(2);
 }
 
-void CLD()
+static inline void CLD()
 {
     cpu->reg.status_flag.D = false;
     tick(2);
 }
 
-void SEC()
+static inline void SEC()
 {
     cpu->reg.status_flag.C = true;
     tick(2);
 }
 
-void SEI()
+static inline void SEI()
 {
     cpu->reg.status_flag.I = true;
     tick(2);
 }
 
-void SED()
+static inline void SED()
 {
     cpu->reg.status_flag.D = true;
     tick(2);
 }
 
 
-void CMP()
+static inline void CMP()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = cpu->reg.A - v;
@@ -442,7 +442,7 @@ void CMP()
     cpu->reg.status_flag.N = RBIT7(r) == 1; 
 }
 
-void CPX()
+static inline void CPX()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = cpu->reg.X - v;
@@ -452,7 +452,7 @@ void CPX()
     cpu->reg.status_flag.N = RBIT7(r) == 1; 
 }
 
-void CPY()
+static inline void CPY()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = cpu->reg.Y - v;
@@ -462,7 +462,7 @@ void CPY()
     cpu->reg.status_flag.N = RBIT7(r) == 1; 
 }
 
-void DEC()
+static inline void DEC()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = v - 1;
@@ -473,7 +473,7 @@ void DEC()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void EOR()
+static inline void EOR()
 {
     cpu->reg.A ^= read8(cpu->oprand);
 
@@ -481,7 +481,7 @@ void EOR()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void INC()
+static inline void INC()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = v + 1;
@@ -492,7 +492,7 @@ void INC()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void LDA()
+static inline void LDA()
 {
     cpu->reg.A = read8(cpu->oprand);
 
@@ -500,7 +500,7 @@ void LDA()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void LDX()
+static inline void LDX()
 {
     cpu->reg.X = read8(cpu->oprand);
 
@@ -508,7 +508,7 @@ void LDX()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.X) == 1;
 }
 
-void LDY()
+static inline void LDY()
 {
     cpu->reg.Y = read8(cpu->oprand);
 
@@ -516,7 +516,7 @@ void LDY()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.Y) == 1;
 }
 
-void LSR_A()
+static inline void LSR_A()
 {
     cpu->reg.status_flag.C = cpu->reg.A & 1;
 
@@ -526,7 +526,7 @@ void LSR_A()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void LSR()
+static inline void LSR()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = v >> 1;
@@ -538,12 +538,12 @@ void LSR()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void NOP()
+static inline void NOP()
 {
     tick(2);
 }
 
-void ORA()
+static inline void ORA()
 {
     cpu->reg.A |= read8(cpu->oprand);
 
@@ -556,47 +556,47 @@ void ORA()
 *   Stack Stuff
 */
 #define STACK_ADDR 0x100
-void push_stack8(uint8_t v)
+static inline void push_stack8(uint8_t v)
 {
     write8(cpu->reg.SP + STACK_ADDR, v);
     --cpu->reg.SP;
 }
 
-void push_stack16(uint16_t v)
+static inline void push_stack16(uint16_t v)
 {
     push_stack8(v >> 8);
     push_stack8(v & 0xFF);
 }
 
-uint8_t pull_stack8()
+static inline uint8_t pull_stack8()
 {
     cpu->reg.SP++;
     return read8(cpu->reg.SP + STACK_ADDR);
 }
 
-uint16_t pull_stack16()
+static inline uint16_t pull_stack16()
 {
    return (pull_stack8()) | (pull_stack8() << 8);
 }
 
-void JMP()
+static inline void JMP()
 {
     cpu->reg.PC = cpu->oprand;
 }
 
-void PHA()
+static inline void PHA()
 {
     push_stack8(cpu->reg.A);
 }
 
-void PHP()
+static inline void PHP()
 {
     /// breakpoint bit is set.
     /// http://nesdev.com/6502bugs.txt
     push_stack8(cpu->reg.P | BIT4);
 }
 
-void PLA()
+static inline void PLA()
 {
     cpu->reg.A = pull_stack8();
 
@@ -604,7 +604,7 @@ void PLA()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void PLP()
+static inline void PLP()
 {
     cpu->reg.P = pull_stack8();
 
@@ -613,7 +613,7 @@ void PLP()
 }
 
 /// JSR-RTS-RTI-BUG: http://nesdev.com/6502bugs.txt
-void JSR()
+static inline void JSR()
 {
     /// JSR has a bug that sets the addr at -1.
     /// This is *fixed* in RTS, but not in RTI.
@@ -621,7 +621,7 @@ void JSR()
     cpu->reg.PC = cpu->oprand;
 }
 
-void RTS()
+static inline void RTS()
 {
     /// Due to JSR bug, the PC was set at PC -1.
     /// RTS increases the PC back.
@@ -629,7 +629,7 @@ void RTS()
     tick(4);
 }
 
-void RTI()
+static inline void RTI()
 {
     cpu->reg.P = pull_stack8();
 
@@ -646,7 +646,7 @@ void RTI()
 /*
 *   Register Instructions.
 */
-void TAX()
+static inline void TAX()
 {
     cpu->reg.X = cpu->reg.A;
 
@@ -656,7 +656,7 @@ void TAX()
     tick(2);
 }
 
-void TXA()
+static inline void TXA()
 {
     cpu->reg.A = cpu->reg.X;
 
@@ -666,7 +666,7 @@ void TXA()
     tick(2);
 }
 
-void TSX()
+static inline void TSX()
 {
     cpu->reg.X = cpu->reg.SP;
 
@@ -676,14 +676,14 @@ void TSX()
     tick(2);
 }
 
-void TXS()
+static inline void TXS()
 {
     cpu->reg.SP = cpu->reg.X;
 
     tick(2);
 }
 
-void DEX()
+static inline void DEX()
 {
     --cpu->reg.X;
 
@@ -693,7 +693,7 @@ void DEX()
     tick(2);
 }
 
-void INX()
+static inline void INX()
 {
     ++cpu->reg.X;
 
@@ -703,7 +703,7 @@ void INX()
     tick(2);
 }
 
-void TAY()
+static inline void TAY()
 {
     cpu->reg.Y = cpu->reg.A;
 
@@ -713,7 +713,7 @@ void TAY()
     tick(2);
 }
 
-void TYA()
+static inline void TYA()
 {
     cpu->reg.A = cpu->reg.Y;
 
@@ -723,7 +723,7 @@ void TYA()
     tick(2);
 }
 
-void DEY()
+static inline void DEY()
 {
     --cpu->reg.Y;
 
@@ -733,7 +733,7 @@ void DEY()
     tick(2);
 }
 
-void INY()
+static inline void INY()
 {
     ++cpu->reg.Y;
 
@@ -743,7 +743,7 @@ void INY()
     tick(2);
 }
 
-void ROL_A()
+static inline void ROL_A()
 {
     uint8_t old_c_flag = cpu->reg.status_flag.C;
     cpu->reg.status_flag.C = RBIT7(cpu->reg.A);
@@ -754,7 +754,7 @@ void ROL_A()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void ROL()
+static inline void ROL()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = (v << 1) | cpu->reg.status_flag.C;
@@ -766,7 +766,7 @@ void ROL()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void ROR_A()
+static inline void ROR_A()
 {
     uint8_t old_c_flag = cpu->reg.status_flag.C;
     cpu->reg.status_flag.C = cpu->reg.A & 1;
@@ -777,7 +777,7 @@ void ROR_A()
     cpu->reg.status_flag.N = RBIT7(cpu->reg.A) == 1;
 }
 
-void ROR()
+static inline void ROR()
 {
     uint8_t v = read8(cpu->oprand);
     uint8_t r = (v >> 1) | (cpu->reg.status_flag.C << 7);
@@ -789,17 +789,17 @@ void ROR()
     cpu->reg.status_flag.N = RBIT7(r) == 1;
 }
 
-void STA()
+static inline void STA()
 {
     write8(cpu->oprand, cpu->reg.A);
 }
 
-void STX()
+static inline void STX()
 {
     write8(cpu->oprand, cpu->reg.X);
 }
 
-void STY()
+static inline void STY()
 {
     write8(cpu->oprand, cpu->reg.Y);
 }
