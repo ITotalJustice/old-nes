@@ -33,34 +33,40 @@ void mmu_exit()
     mmu = NULL;
 }
 
+typedef enum
+{
+    CPUMemMap_ST_Ram,
+    CPUMemMap_ED_Ram            = 0x07FF,
+
+    CPUMemMap_ST_RamMirror,
+    CPUMemMap_ED_RamMirror      = 0x1FFF,
+
+    CPUMemMap_ST_PPUReg,
+    CPUMemMap_ED_PPUReg         = 0x2007,
+
+    CPUMemMap_ST_PPURegMirror,
+    CPUMemMap_ED_PPURegMirror   = 0x3FFF,
+} CPUMemMap;
+
 uint8_t mmu_read8(uint16_t addr)
 {
     switch (addr)
-    {
-        case 0x0000 ... 0x1FFF:
-            return mmu->ram[addr];
-            /*
-        case 0x0000 ... 0x07FF:
+    {    
+        case CPUMemMap_ST_Ram ... CPUMemMap_ED_Ram:
             return mmu->ram[addr];
         
-            //return mmu->ram[addr - (0x800 * (addr & 0x800))]
-        case 0x0800 ... 0x1FFF:
-            return mmu->mirror_ram[addr - 0x800];*/
+        case CPUMemMap_ST_RamMirror ... CPUMemMap_ED_RamMirror:
+            return mmu->ram[addr - (CPUMemMap_ST_RamMirror * (addr % CPUMemMap_ST_RamMirror))];
         
         /// ppu reg
-        case 0x2000 ... 0x2007:
-            printf("ppu reg read\n");
-            assert(0);
+        case CPUMemMap_ST_PPUReg ... CPUMemMap_ED_PPUReg:
+            return ppu_read_register(addr);
+
+        /// ppu reg mirrored...alot
+        case CPUMemMap_ST_PPURegMirror ... CPUMemMap_ED_PPURegMirror:
+            return ppu_read_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)));
 
         /*
-        /// ppu reg mirrored...alot
-        case 0x2008 ... 0x3FFF:
-            //return (ppu_reg(addr - (0x2008 + (0x8 * (addr & 0x8))))
-            OR
-            // return (ppu_reg(addr - (0x8 * (addr & 0x8)))
-            printf("ppu reg mirror read\n");
-            assert(0);
-
         /// sound / joypad / io
         case 0x4000 ... 0x401F:
             printf("sound joy io read\n");
@@ -94,29 +100,25 @@ void mmu_write8(uint16_t addr, uint8_t v)
 {
     switch (addr)
     {
-        case 0x0000 ... 0x1FFF:
+        case CPUMemMap_ST_Ram ... CPUMemMap_ED_Ram:
             mmu->ram[addr] = v;
-            break;
-        /*
-        case 0x0000 ... 0x07FF:
-            mmu->ram[addr] = v;
-            mmu->mirror_ram[addr] = v;
             break;
         
-        case 0x0800 ... 0x1FFF:
-            mmu->mirror_ram[addr - 0x800] = v;
-            mmu->ram[addr - 0x800] = v;
-            break;*/
-
-        /*
+        case CPUMemMap_ST_RamMirror ... CPUMemMap_ED_RamMirror:
+            mmu->ram[addr - (CPUMemMap_ST_RamMirror * (addr % CPUMemMap_ST_RamMirror))] = v;
+            break;
+        
         /// ppu reg
-        case 0x2000 ... 0x2007:
+        case CPUMemMap_ST_PPUReg ... CPUMemMap_ED_PPUReg:
+            ppu_write_register(addr, v);
             break;
 
         /// ppu reg mirrored...alot
-        case 0x2008 ... 0x3FFF:
+        case CPUMemMap_ST_PPURegMirror ... CPUMemMap_ED_PPURegMirror:
+            ppu_write_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)), v);
             break;
 
+        /*
         /// sound / joypad / io
         case 0x4000 ... 0x401F:
             break;
@@ -139,6 +141,7 @@ void mmu_write8(uint16_t addr, uint8_t v)
         default:
             printf("UNKOWN WRITE MEM ADDRESS 0x%X\n", addr);
             assert(0);
+            break;
     }
 }
 
