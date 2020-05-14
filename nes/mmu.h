@@ -6,15 +6,10 @@ extern "C" {
 
 #include <stdint.h>
 
+#define INTERNAL_RAM_SIZE 0x2000
 typedef struct
 {
-    uint8_t ram[0x2000];
-    //uint8_t ram[0x800];
-    //uint8_t mirror_ram[0x800];
-
-    uint8_t cart_ram[0x4000];
-    uint8_t cart_mem[0x4000];
-    uint8_t cart_mem_mirror[0x4000];
+    uint8_t ram[INTERNAL_RAM_SIZE];
 } mmu_t;
 
 
