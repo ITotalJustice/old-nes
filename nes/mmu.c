@@ -154,13 +154,14 @@ uint8_t mmu_read8(uint16_t addr)
             }
 
         /// cart prg-ram OR prg-rom
-        case 0x6000 ... 0x7FFF:
-            return cart_read(addr - 0x6000);
+        //case 0x6000 ... 0x7FFF:
+            //return cart_read(addr - 0x6000);
 
-        /// cart mem
+        /// first 16kb of cart mem.
         case 0x8000 ... 0xBFFF:
             return cart_read(addr - 0x8000);
 
+        /// last 16kb of cart mem OR mirror of first 16kb cart mem if cart is 16kb.
         case 0xC000 ... 0xFFFF:
             return cart_read(addr - 0xC000);
 

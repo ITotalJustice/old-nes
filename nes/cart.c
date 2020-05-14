@@ -5,12 +5,13 @@
 #include <assert.h>
 
 #include "cart.h"
+#include "util.h"
 
 static cart_t *cart = NULL;
 
 #define HEADER_ID "NES"
 #define HEADER_SIZE sizeof(rom_header_t)
-#define ROM_SIZE_MAX 0x100000 /// 1MiB
+#define ROM_SIZE_MAX _1MiB
 
 void cart_eject();
 
@@ -135,6 +136,16 @@ int cart_load(const char *path)
     }
 
     /// TODO: parse header.
+    printf("\n#### ROM-INFO ####\n");
+    {
+        printf("program rom size: %u\n", header.prg_rom_size * _16KB);
+        printf("pattern rom size: %u\n", header.chr_rom_size * _8KB);
+        printf("hw_nametable_type: %u\n", header.flags6.hw_nametable_type);
+        printf("has battery: %s\n", bool_str(header.flags6.battery));
+        printf("has trainer: %s\n", bool_str(header.flags6.trainer));
+        printf("mapper number: %u\n", header.flags6.mapper_number);
+    }
+    printf("#### ROM-END ####\n\n");
 
     /// check if the header is valid.
     bool is_ines = strncmp(header.id, HEADER_ID, 3) == 0;
