@@ -13,7 +13,7 @@ typedef struct
 } mmu_t;
 
 
-int mmu_init();
+const mmu_t *mmu_init();
 void mmu_exit();
 
 int mmu_reset();

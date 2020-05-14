@@ -99,7 +99,7 @@ typedef struct
     {
         struct
         {
-            uint8_t unused;
+            uint8_t pgr_ram_size;
         } flags8;
 
         struct
@@ -113,7 +113,8 @@ typedef struct
     {
         struct
         {
-            uint8_t unused;
+            uint8_t tv_system:1;
+            uint8_t reserved:7;
         } flags9;
 
         struct
@@ -127,7 +128,11 @@ typedef struct
     {
         struct
         {
-            uint8_t unused;
+            uint8_t tv_system:2;
+            uint8_t unused0:2;
+            uint8_t pgrm_ram:1;
+            uint8_t bus_conflicts:1;
+            uint8_t unused1:2;
         } flags10;
 
         struct
@@ -230,7 +235,7 @@ typedef struct
 } cart_t;
 
 
-int cart_init();
+const cart_t *cart_init();
 void cart_exit();
 
 void cart_eject();

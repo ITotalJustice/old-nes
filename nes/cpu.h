@@ -54,6 +54,7 @@ typedef struct
     cpu_register_t reg;
 
     uint32_t cycle;
+    uint64_t cycle_total;
 
     union
     {
@@ -73,14 +74,17 @@ typedef struct
 } cpu_t;
 
 
-int cpu_init();
+const cpu_t *cpu_init();
 void cpu_exit();
 
 int cpu_power_up();
 int cpu_reset();
 
+void cpu_reset_cycle();
+
+int cpu_tick();
+
 /// debug
-void cpu_debug_step();
 cpu_t *cpu_debug_get();
 
 #ifdef __cplusplus

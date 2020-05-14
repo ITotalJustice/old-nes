@@ -237,13 +237,15 @@ typedef struct
 } apu_t;
 
 
-int apu_init();
+const apu_t *apu_init();
 void apu_exit();
 
 int apu_reset();
 
 uint8_t apu_read_register(uint16_t addr);
 void apu_write_register(uint16_t addr, uint8_t v);
+
+int apu_tick();
 
 #ifdef __cplusplus
 }

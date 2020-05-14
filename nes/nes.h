@@ -13,10 +13,14 @@ extern "C" {
 
 
 int nes_init();
-int nes_reset();
 void nes_exit();
 
+int nes_reset();
+
 int nes_loadrom(const char *path);
+
+int nes_run();
+int nes_step();
 
 #ifdef __cplusplus
 }

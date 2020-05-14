@@ -127,7 +127,6 @@ typedef struct
     ppu_nametable_t nametable3;
 
     ppu_palettes_t palette_ram_indexes;
-    //uint8_t palette_ram_indexes[0x0020];
 } ppu_memory_map_t;
 
 typedef struct
@@ -164,13 +163,15 @@ typedef struct
     ppu_oam_t oam[64];
 } ppu_t;
 
-int ppu_init();
+const ppu_t *ppu_init();
 void ppu_exit();
 
 int ppu_reset();
 
 uint8_t ppu_read_register(uint16_t addr);
 void ppu_write_register(uint16_t addr, uint8_t v);
+
+int ppu_tick();
 
 #ifdef __cplusplus
 }

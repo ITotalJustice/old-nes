@@ -12,18 +12,35 @@
 
 static mmu_t *mmu = NULL;
 
-int mmu_init()
+const mmu_t *mmu_init()
 {
+    assert(mmu == NULL);
+    if (mmu)
+    {
+        fprintf(stderr, "mmu already initialised\n");
+        return NULL;
+    }
+
     mmu = malloc(sizeof(mmu_t));
     assert(mmu);
-    mmu_reset();
-
-    return 0;
+    if (!mmu)
+    {
+        fprintf(stderr, "Failed to alloc mmu\n");
+        return NULL;
+    }
+    
+    return mmu;
 }
 
 void mmu_exit()
 {
     assert(mmu);
+    if (!mmu)
+    {
+        fprintf(stderr, "mmu not initialised\n");
+        return;
+    }
+
     free(mmu);
     mmu = NULL;
 }
@@ -129,8 +146,8 @@ uint8_t mmu_read8(uint16_t addr)
                 case CPURegMemMap_DMC_LEN:      return apu_read_register(addr);
                 case CPURegMemMap_OAMDMA:       return ppu_read_register(addr);
                 case CPURegMemMap_SND_CHN:      return apu_read_register(addr);
-                case CPURegMemMap_JOY1:         /// joy1
-                case CPURegMemMap_JOY2:         /// joy2
+                case CPURegMemMap_JOY1:         return 0; /// joy1
+                case CPURegMemMap_JOY2:         return 0; /// joy2
                 default:
                     fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
                     assert(0);
@@ -207,7 +224,7 @@ void mmu_write8(uint16_t addr, uint8_t v)
                 case CPURegMemMap_DMC_LEN:      apu_write_register(addr, v);    break;
                 case CPURegMemMap_OAMDMA:       ppu_write_register(addr, v);    break;
                 case CPURegMemMap_SND_CHN:      apu_write_register(addr, v);    break;
-                case CPURegMemMap_JOY1:         /// joystick strobe.
+                case CPURegMemMap_JOY1:         assert(0); break; /// joystick strobe.
                 case CPURegMemMap_JOY2:         apu_write_register(addr, v);    break;
                 default:
                     fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);

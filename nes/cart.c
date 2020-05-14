@@ -14,13 +14,13 @@ static cart_t *cart = NULL;
 
 void cart_eject();
 
-int cart_init()
+const cart_t *cart_init()
 {
     assert(cart == NULL);
     if (cart)
     {
         fprintf(stderr, "Cart already initialised\n");
-        return -1;
+        return NULL;
     }
 
     cart = malloc(sizeof(cart_t));
@@ -28,10 +28,10 @@ int cart_init()
     if (!cart)
     {
         fprintf(stderr, "Failed to alloc cart\n");
-        return -1;
+        return NULL;
     }
 
-    return 0;
+    return cart;
 }
 
 void cart_exit()

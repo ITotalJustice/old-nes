@@ -11,17 +11,35 @@
 
 static cpu_t *cpu = NULL;
 
-int cpu_init()
+const cpu_t *cpu_init()
 {
+    assert(cpu == NULL);
+    if (cpu)
+    {
+        fprintf(stderr, "cpu already initialised\n");
+        return NULL;
+    }
+
     cpu = malloc(sizeof(cpu_t));
     assert(cpu);
+    if (!cpu)
+    {
+        fprintf(stderr, "Failed to alloc cpu\n");
+        return NULL;
+    }
 
-    return 0;
+    return cpu;
 }
 
 void cpu_exit()
 {
     assert(cpu);
+    if (!cpu)
+    {
+        fprintf(stderr, "cpu not initialised\n");
+        return;
+    }
+
     free(cpu);
     cpu = NULL;
 }
@@ -89,10 +107,16 @@ int cpu_power_up()
     return 0;
 }
 
+void cpu_reset_cycle()
+{
+    cpu->cycle = 0;
+}
+
 static inline void tick(uint8_t c)
 {
     assert(c > 0);
     cpu->cycle += c;
+    cpu->cycle_total += c;
 }
 
 static inline uint8_t read8(uint16_t addr)
@@ -835,7 +859,7 @@ static inline void STY()
 }
 
 
-int execute(void)
+int cpu_tick()
 {
     /// 149 instructions so far...
 
@@ -1013,11 +1037,6 @@ int execute(void)
 /*
 *   DEBUG
 */
-
-void cpu_debug_step()
-{
-    execute();
-}
 
 cpu_t *cpu_debug_get()
 {

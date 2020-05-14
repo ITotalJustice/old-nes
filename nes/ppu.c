@@ -8,17 +8,35 @@
 
 static ppu_t *ppu = NULL;
 
-int ppu_init()
+const ppu_t *ppu_init()
 {
+    assert(ppu == NULL);
+    if (ppu)
+    {
+        fprintf(stderr, "ppu already initialised\n");
+        return NULL;
+    }
+
     ppu = malloc(sizeof(ppu_t));
     assert(ppu);
-
-    return 0;
+    if (!ppu)
+    {
+        fprintf(stderr, "Failed to alloc ppu\n");
+        return NULL;
+    }
+    
+    return ppu;
 }
 
 void ppu_exit()
 {
     assert(ppu);
+    if (!ppu)
+    {
+        fprintf(stderr, "ppu not initialised\n");
+        return;
+    }
+
     free(ppu);
     ppu = NULL;
 }
@@ -224,4 +242,9 @@ static inline void ppu_write8(uint16_t addr, uint8_t v)
             assert(0);
             break;
     }
+}
+
+int ppu_tick()
+{
+    return 0;
 }

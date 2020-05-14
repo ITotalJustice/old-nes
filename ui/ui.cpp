@@ -203,8 +203,9 @@ void gfx_debug()
                 run = false;
             }
             else
-            for (int i =0; i < 1000; i++)
-            cpu_debug_step();
+            {
+                nes_run();
+            }
         }
 
         ImGui::Text("Debug TIME! %s", loaded_rom ? "ROM LOADED" : "NA");
@@ -213,7 +214,9 @@ void gfx_debug()
         if (ImGui::Button("Step"))
         {
             for (int i = 0; i < breakpoint; i++)
-            cpu_debug_step();
+            {
+                nes_step();
+            }
         }
 
         if (ImGui::Button("Run"))

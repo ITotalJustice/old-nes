@@ -8,17 +8,35 @@
 
 static apu_t *apu = NULL;
 
-int apu_init()
+const apu_t *apu_init()
 {
+    assert(apu == NULL);
+    if (apu)
+    {
+        fprintf(stderr, "apu already initialised\n");
+        return NULL;
+    }
+
     apu = malloc(sizeof(apu_t));
     assert(apu);
-
-    return 0;
+    if (!apu)
+    {
+        fprintf(stderr, "Failed to alloc apu\n");
+        return NULL;
+    }
+    
+    return apu;
 }
 
 void apu_exit()
 {
     assert(apu);
+    if (!apu)
+    {
+        fprintf(stderr, "apu not initialised\n");
+        return;
+    }
+
     free(apu);
     apu = NULL;
 }
@@ -141,4 +159,9 @@ void apu_write_register(uint16_t addr, uint8_t v)
             assert(0);
             break;
     }
+}
+
+int apu_tick()
+{
+    return 0;
 }
