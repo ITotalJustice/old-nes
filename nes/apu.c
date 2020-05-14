@@ -8,17 +8,10 @@
 
 static apu_t *apu = NULL;
 
-void apu_reset()
-{
-    assert(apu);
-    memset(apu, 0, sizeof(apu_t));
-}
-
 int apu_init()
 {
     apu = malloc(sizeof(apu_t));
     assert(apu);
-    apu_reset();
 
     return 0;
 }
@@ -28,6 +21,20 @@ void apu_exit()
     assert(apu);
     free(apu);
     apu = NULL;
+}
+
+int apu_reset()
+{
+    assert(apu);
+    if (!apu)
+    {
+        fprintf(stderr, "apu not initialised\n");
+        return -1;
+    }
+
+    memset(apu, 0, sizeof(apu_t));
+
+    return 0;
 }
 
 uint8_t apu_read_register(uint16_t addr)
@@ -77,7 +84,7 @@ uint8_t apu_read_register(uint16_t addr)
         case APURegisterAddr_Status: return apu->reg.status;
         case APURegisterAddr_FrameCounter: return apu->reg.frame_counter;
         default:
-            printf("READING FROM NON VALID ADDRESS IN APU READ REG: 0x%04X\n", addr);
+            fprintf(stderr, "READING FROM NON VALID ADDRESS IN APU READ REG: 0x%04X\n", addr);
             assert(0);
             return 0;
     }
@@ -130,7 +137,7 @@ void apu_write_register(uint16_t addr, uint8_t v)
         case APURegisterAddr_Status: apu->reg.status = v; break;
         case APURegisterAddr_FrameCounter: apu->reg.frame_counter = v; break;
         default:
-            printf("READING FROM NON VALID ADDRESS IN APU READ REG: 0x%04X\n", addr);
+            fprintf(stderr, "READING FROM NON VALID ADDRESS IN APU READ REG: 0x%04X\n", addr);
             assert(0);
             break;
     }

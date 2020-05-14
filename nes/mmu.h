@@ -17,9 +17,11 @@ typedef struct
     uint8_t cart_mem_mirror[0x4000];
 } mmu_t;
 
-void mmu_reset();
+
 int mmu_init();
 void mmu_exit();
+
+int mmu_reset();
 
 uint8_t mmu_read8(uint16_t addr);
 uint16_t mmu_read16(uint16_t addr);

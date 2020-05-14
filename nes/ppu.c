@@ -8,17 +8,10 @@
 
 static ppu_t *ppu = NULL;
 
-void ppu_reset()
-{
-    assert(ppu);
-    memset(ppu, 0, sizeof(ppu_t));
-}
-
 int ppu_init()
 {
     ppu = malloc(sizeof(ppu_t));
     assert(ppu);
-    ppu_reset();
 
     return 0;
 }
@@ -28,6 +21,20 @@ void ppu_exit()
     assert(ppu);
     free(ppu);
     ppu = NULL;
+}
+
+int ppu_reset()
+{
+    assert(ppu);
+    if (!ppu)
+    {
+        fprintf(stderr, "ppu not initialised\n");
+        return -1;
+    }
+
+    memset(ppu, 0, sizeof(ppu_t));
+
+    return 0;
 }
 
 uint8_t ppu_read_register(uint16_t addr)
@@ -44,7 +51,7 @@ uint8_t ppu_read_register(uint16_t addr)
         case PPURegisterAddr_PPUDATA:   return ppu->reg.ppu_data;
         case PPURegisterAddr_OAMDMA:    return ppu->reg.oam_dma;
         default:
-            printf("READING FROM NON VALID ADDRESS IN PPU READ REG: 0x%04X\n", addr);
+            fprintf(stderr, "READING FROM NON VALID ADDRESS IN PPU READ REG: 0x%04X\n", addr);
             assert(0);
             return 0;
     }
@@ -64,7 +71,7 @@ void ppu_write_register(uint16_t addr, uint8_t v)
         case PPURegisterAddr_PPUDATA:   ppu->reg.ppu_data = v;      break;
         case PPURegisterAddr_OAMDMA:    ppu->reg.oam_dma = v;       break;
         default:
-            printf("WRITING TO NON VALID ADDRESS IN PPU WRITE REG: 0x%04X\n", addr);
+            fprintf(stderr, "WRITING TO NON VALID ADDRESS IN PPU WRITE REG: 0x%04X\n", addr);
             assert(0);
             break;
     }

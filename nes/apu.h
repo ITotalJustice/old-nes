@@ -236,9 +236,11 @@ typedef struct
     apu_registers_t reg;
 } apu_t;
 
-void apu_reset();
+
 int apu_init();
 void apu_exit();
+
+int apu_reset();
 
 uint8_t apu_read_register(uint16_t addr);
 void apu_write_register(uint16_t addr, uint8_t v);

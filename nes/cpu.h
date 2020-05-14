@@ -72,11 +72,12 @@ typedef struct
     } debug;
 } cpu_t;
 
-void cpu_power_up();
-void cpu_reset();
+
 int cpu_init();
 void cpu_exit();
 
+int cpu_power_up();
+int cpu_reset();
 
 /// debug
 void cpu_debug_step();

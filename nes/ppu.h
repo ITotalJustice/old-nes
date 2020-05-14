@@ -164,10 +164,10 @@ typedef struct
     ppu_oam_t oam[64];
 } ppu_t;
 
-
-void ppu_reset();
 int ppu_init();
 void ppu_exit();
+
+int ppu_reset();
 
 uint8_t ppu_read_register(uint16_t addr);
 void ppu_write_register(uint16_t addr, uint8_t v);

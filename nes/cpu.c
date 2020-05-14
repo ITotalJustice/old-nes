@@ -7,48 +7,87 @@
 
 #include "cpu.h"
 #include "mmu.h"
+#include "util.h"
 
-/// TODO: Move these into a util.h
-#define BIT0 (1)
-#define BIT1 (1 << 1)
-#define BIT2 (1 << 2)
-#define BIT3 (1 << 3)
-#define BIT4 (1 << 4)
-#define BIT5 (1 << 5)
-#define BIT6 (1 << 6)
-#define BIT7 (1 << 7)
+static cpu_t *cpu = NULL;
 
-/// For masking
-#define MBIT0(x) ((x & BIT0))
-#define MBIT1(x) ((x & BIT1))
-#define MBIT2(x) ((x & BIT2))
-#define MBIT3(x) ((x & BIT3))
-#define MBIT4(x) ((x & BIT4))
-#define MBIT5(x) ((x & BIT5))
-#define MBIT6(x) ((x & BIT6))
-#define MBIT7(x) ((x & BIT7))
+int cpu_init()
+{
+    cpu = malloc(sizeof(cpu_t));
+    assert(cpu);
 
-/// Left-shift bit.
-#define LBIT0(x) (x)
-#define LBIT1(x) ((x << 1))
-#define LBIT2(x) ((x << 2))
-#define LBIT3(x) ((x << 3))
-#define LBIT4(x) ((x << 4))
-#define LBIT5(x) ((x << 5))
-#define LBIT6(x) ((x << 6))
-#define LBIT7(x) ((x << 7))
+    return 0;
+}
 
-/// Right-shift bit.
-#define RBIT0(x) (x)
-#define RBIT1(x) ((x >> 1))
-#define RBIT2(x) ((x >> 2))
-#define RBIT3(x) ((x >> 3))
-#define RBIT4(x) ((x >> 4))
-#define RBIT5(x) ((x >> 5))
-#define RBIT6(x) ((x >> 6))
-#define RBIT7(x) ((x >> 7))
+void cpu_exit()
+{
+    assert(cpu);
+    free(cpu);
+    cpu = NULL;
+}
 
-cpu_t *cpu = NULL;
+int cpu_reset()
+{
+    assert(cpu);
+    if (!cpu)
+    {
+        fprintf(stderr, "cpu not initialised\n");
+        return -1;
+    }
+
+    /// TODO: check what other valus need to be set upon reset.
+    cpu->reg.status_flag.I = true;
+    cpu->reg.status_flag.U = true;
+
+    /// Set registers.
+    cpu->reg.SP -= 3;
+    cpu->reg.PC = mmu_read16(0xFFFC);
+
+    /// misc.
+    cpu->oprand = 0;
+    cpu->opcode = 0;
+    cpu->cycle = 0;
+    cpu->debug.count = 0;
+
+    return 0;
+}
+
+int cpu_power_up()
+{
+    assert(cpu);
+    if (!cpu)
+    {
+        fprintf(stderr, "cpu not initialised\n");
+        return -1;
+    }
+
+    /// Set status flags.
+    cpu->reg.status_flag.I = true;
+    cpu->reg.status_flag.D = false;
+    cpu->reg.status_flag.U = true;
+
+    /// Set registers.
+    cpu->reg.A = false;
+    cpu->reg.X = false;
+    cpu->reg.Y = false;
+    cpu->reg.SP = 0xFD;
+    cpu->reg.PC = mmu_read16(0xFFFC);
+
+    /// misc.
+    cpu->oprand = 0;
+    cpu->opcode = 0;
+    cpu->cycle = 0;
+    cpu->debug.count = 0;
+
+    #if 0
+    /// This is for nestest auto.
+    cpu->reg.status_flag.D = true;
+    cpu->cycle = 7;
+    cpu->reg.PC = 0xC000;
+    #endif
+
+    return 0;
+}
 
 static inline void tick(uint8_t c)
 {
@@ -129,8 +168,6 @@ static inline void addressing(AddrType type)
         /// this will handle everything automatically.
         /// another way is to do % 256.
         /// that's probably(?) slower than a cast, and less obvious to me.
-        /// especially because syntax highlighting makes it clear of a cast.
-        /// I also imagine that *all* cpu's treat uint8 as a byte.
         case AddrType_ZP:
             cpu->oprand = read8(cpu->reg.PC++);
             break;
@@ -164,73 +201,14 @@ static inline void addressing(AddrType type)
             break;
         
         default:
-            printf("INCORRECT ADDRESS TYPE: %u", type);
+            fprintf(stderr, "INCORRECT ADDRESS TYPE: %u", type);
             assert(0);
     }
 }
 
-void cpu_reset()
-{
-    /// TODO: check what other valus need to be set upon reset.
-    cpu->reg.status_flag.I = true;
-    cpu->reg.status_flag.U = true;
-
-    /// Set registers.
-    cpu->reg.SP -= 3;
-    cpu->reg.PC = mmu_read16(0xFFFC);
-
-    /// misc.
-    cpu->oprand = 0;
-    cpu->opcode = 0;
-    cpu->cycle = 0;
-    cpu->debug.count = 0;
-}
-
-void cpu_power_up()
-{
-    /// Set status flags.
-    cpu->reg.status_flag.I = true;
-    cpu->reg.status_flag.D = false;
-    cpu->reg.status_flag.U = true;
-
-    /// Set registers.
-    cpu->reg.A = false;
-    cpu->reg.X = false;
-    cpu->reg.Y = false;
-    cpu->reg.SP = 0xFD;
-    cpu->reg.PC = mmu_read16(0xFFFC);
-
-    /// misc.
-    cpu->oprand = 0;
-    cpu->opcode = 0;
-    cpu->cycle = 0;
-    cpu->debug.count = 0;
-
-    /// TODO: REMOVE THIS
-    /// This is for nestest auto.
-    cpu->reg.status_flag.D = true;
-    cpu->cycle = 7;
-    cpu->reg.PC = 0xC000;
-}
-
-int cpu_init()
-{
-    cpu = malloc(sizeof(cpu_t));
-    assert(cpu);
-
-    return 0;
-}
-
-void cpu_exit()
-{
-    assert(cpu);
-    free(cpu);
-    cpu = NULL;
-}
-
 static inline void NIP()
 {
-    printf("NOT IMPLEMENTED opcode: 0x%X PC: 0x%X\n", cpu->opcode, cpu->reg.PC);
+    fprintf(stderr, "NOT IMPLEMENTED opcode: 0x%X PC: 0x%X\n", cpu->opcode, cpu->reg.PC);
     assert(0);
 }
 

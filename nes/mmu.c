@@ -8,14 +8,9 @@
 #include "apu.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "cart.h"
 
-mmu_t *mmu = NULL;
-
-void mmu_reset()
-{
-    assert(mmu);
-    memset(mmu, 0, sizeof(mmu_t));
-}
+static mmu_t *mmu = NULL;
 
 int mmu_init()
 {
@@ -31,6 +26,20 @@ void mmu_exit()
     assert(mmu);
     free(mmu);
     mmu = NULL;
+}
+
+int mmu_reset()
+{
+    assert(mmu);
+    if (!mmu)
+    {
+        fprintf(stderr, "mmu not initialised\n");
+        return -1;
+    }
+
+    memset(mmu, 0, sizeof(mmu_t));
+
+    return 0;
 }
 
 typedef enum
@@ -123,23 +132,25 @@ uint8_t mmu_read8(uint16_t addr)
                 case CPURegMemMap_JOY1:         /// joy1
                 case CPURegMemMap_JOY2:         /// joy2
                 default:
-                    printf("READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
                     assert(0);
             }
 
         /// cart prg-ram OR prg-rom
         case 0x6000 ... 0x7FFF:
-            return mmu->cart_ram[addr - 0x6000];
+            return cart_read(addr - 0x6000);
 
         /// cart mem
         case 0x8000 ... 0xBFFF:
+            return cart_read(addr - 0x8000);
             return mmu->cart_mem[addr - 0x8000];
 
         case 0xC000 ... 0xFFFF:
+            return cart_read(addr - 0xC000);
             return mmu->cart_mem[addr - 0xC000];
 
         default:
-            printf("UNKOWN READ MEM ADDRESS 0x%X\n", addr);
+            fprintf(stderr, "UNKOWN READ MEM ADDRESS 0x%X\n", addr);
             assert(0);
             return 0;
     }
@@ -201,27 +212,19 @@ void mmu_write8(uint16_t addr, uint8_t v)
                 case CPURegMemMap_JOY1:         /// joystick strobe.
                 case CPURegMemMap_JOY2:         apu_write_register(addr, v);    break;
                 default:
-                    printf("READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
                     assert(0);
                     break;
             }
 
-        /// cart prg-ram OR prg-rom
-        case 0x6000 ... 0x7FFF:
-            mmu->cart_ram[addr - 0x6000] = v;
-            break;
-
-        /// cart mem
-        case 0x8000 ... 0xBFFF:
-            mmu->cart_mem[addr - 0x8000] = v;
-            break;
-
-        case 0xC000 ... 0xFFFF:
-            mmu->cart_mem[addr - 0xC000] = v;
+        /// cart READ ONLY
+        case 0x6000 ... 0xFFFF:
+            fprintf(stderr, "Trying to write to ROM cart: 0x%X\n", addr);
+            assert(0);
             break;
 
         default:
-            printf("UNKOWN WRITE MEM ADDRESS 0x%X\n", addr);
+            fprintf(stderr, "UNKOWN WRITE MEM ADDRESS 0x%X\n", addr);
             assert(0);
             break;
     }

@@ -14,6 +14,11 @@ int main(int argc, char **argv)
 
     nes_init();
 
+    if (argc > 1)
+    {
+        nes_loadrom(argv[1]);
+    }
+
     ui();
 
     nes_exit();
