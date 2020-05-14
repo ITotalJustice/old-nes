@@ -22,7 +22,7 @@ LIBS		= -lGL -ldl `sdl2-config --libs`
 
 CXXFLAGS	= -I./libs/imgui -I./libs/imgui/examples/
 
-CXXFLAGS	+= -march=native -Wall -Wformat -O3 -ffunction-sections -fno-exceptions -Wl,--gc-sections
+CXXFLAGS	+= -march=native -Wall -Wformat -O3 -ffunction-sections -fno-exceptions -Wl,--gc-sections #-DNDEBUG
 
 OBJS		= $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 

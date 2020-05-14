@@ -18,7 +18,10 @@ static SDL_GLContext gl_context;
 
 int gfx_init()
 {
-    assert(SDL_Init(SDL_INIT_EVERYTHING) == 0);
+    int ret = 0;
+    
+    ret = SDL_Init(SDL_INIT_EVERYTHING);
+    assert(ret == 0);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -34,6 +37,8 @@ int gfx_init()
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1);
 
+
+    ret = gl3wInit();
     assert(gl3wInit() == 0);
 
     IMGUI_CHECKVERSION();

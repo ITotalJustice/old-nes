@@ -259,7 +259,7 @@ int cpu_power_up()
     cpu->cycle = 0;
     cpu->debug.count = 0;
 
-    #if 1
+    #if 0
     /// This is for nestest auto.
     cpu->reg.status_flag.D = true;
     cpu->cycle = 7;

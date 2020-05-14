@@ -97,7 +97,7 @@ extern "C" {
 #define _512MiB _256MiB << 1
 
 
-inline const char *bool_str(bool cond) { return cond ? "true" : "false"; }
+static inline const char *bool_str(bool cond) { return cond ? "true" : "false"; }
 
 #ifdef __cplusplus
 }
