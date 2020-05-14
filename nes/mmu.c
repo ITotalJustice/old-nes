@@ -107,28 +107,28 @@ uint8_t mmu_read8(uint16_t addr)
         case 0x4000 ... 0x401F:
             switch (addr)
             {
-                case CPURegMemMap_SQ1_VOL:      apu_read_register(addr);
-                case CPURegMemMap_SQ1_SWEEP:    apu_read_register(addr);
-                case CPURegMemMap_SQ1_LO:       apu_read_register(addr);
-                case CPURegMemMap_SQ1_HI:       apu_read_register(addr);
-                case CPURegMemMap_SQ2_VOL:      apu_read_register(addr);
-                case CPURegMemMap_SQ2_SWEEP:    apu_read_register(addr);
-                case CPURegMemMap_SQ2_LO:       apu_read_register(addr);
-                case CPURegMemMap_SQ2_HI:       apu_read_register(addr);
-                case CPURegMemMap_TRI_LINEAR:   apu_read_register(addr);
-                case CPURegMemMap_unused0:      apu_read_register(addr);
-                case CPURegMemMap_TRI_LO:       apu_read_register(addr);
-                case CPURegMemMap_TRI_HI:       apu_read_register(addr);
-                case CPURegMemMap_NOISE_VOL:    apu_read_register(addr);
-                case CPURegMemMap_unused1:      apu_read_register(addr);
-                case CPURegMemMap_NOISE_LO:     apu_read_register(addr);
-                case CPURegMemMap_NOISE_HI:     apu_read_register(addr);
-                case CPURegMemMap_DMC_FREQ:     apu_read_register(addr);
-                case CPURegMemMap_DMC_RAW:      apu_read_register(addr);
-                case CPURegMemMap_DMC_START:    apu_read_register(addr);
-                case CPURegMemMap_DMC_LEN:      apu_read_register(addr);
-                case CPURegMemMap_OAMDMA:       ppu_read_register(addr);
-                case CPURegMemMap_SND_CHN:      apu_read_register(addr);
+                case CPURegMemMap_SQ1_VOL:      return apu_read_register(addr);
+                case CPURegMemMap_SQ1_SWEEP:    return apu_read_register(addr);
+                case CPURegMemMap_SQ1_LO:       return apu_read_register(addr);
+                case CPURegMemMap_SQ1_HI:       return apu_read_register(addr);
+                case CPURegMemMap_SQ2_VOL:      return apu_read_register(addr);
+                case CPURegMemMap_SQ2_SWEEP:    return apu_read_register(addr);
+                case CPURegMemMap_SQ2_LO:       return apu_read_register(addr);
+                case CPURegMemMap_SQ2_HI:       return apu_read_register(addr);
+                case CPURegMemMap_TRI_LINEAR:   return apu_read_register(addr);
+                case CPURegMemMap_unused0:      return apu_read_register(addr);
+                case CPURegMemMap_TRI_LO:       return apu_read_register(addr);
+                case CPURegMemMap_TRI_HI:       return apu_read_register(addr);
+                case CPURegMemMap_NOISE_VOL:    return apu_read_register(addr);
+                case CPURegMemMap_unused1:      return apu_read_register(addr);
+                case CPURegMemMap_NOISE_LO:     return apu_read_register(addr);
+                case CPURegMemMap_NOISE_HI:     return apu_read_register(addr);
+                case CPURegMemMap_DMC_FREQ:     return apu_read_register(addr);
+                case CPURegMemMap_DMC_RAW:      return apu_read_register(addr);
+                case CPURegMemMap_DMC_START:    return apu_read_register(addr);
+                case CPURegMemMap_DMC_LEN:      return apu_read_register(addr);
+                case CPURegMemMap_OAMDMA:       return ppu_read_register(addr);
+                case CPURegMemMap_SND_CHN:      return apu_read_register(addr);
                 case CPURegMemMap_JOY1:         /// joy1
                 case CPURegMemMap_JOY2:         /// joy2
                 default:
@@ -143,11 +143,9 @@ uint8_t mmu_read8(uint16_t addr)
         /// cart mem
         case 0x8000 ... 0xBFFF:
             return cart_read(addr - 0x8000);
-            return mmu->cart_mem[addr - 0x8000];
 
         case 0xC000 ... 0xFFFF:
             return cart_read(addr - 0xC000);
-            return mmu->cart_mem[addr - 0xC000];
 
         default:
             fprintf(stderr, "UNKOWN READ MEM ADDRESS 0x%X\n", addr);
