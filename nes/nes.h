@@ -7,9 +7,9 @@ extern "C" {
 #include <stdint.h>
 
 #include "cpu.h"
-#include "mmu.h"
 #include "apu.h"
-#include "mmu.h"
+#include "ppu.h"
+#include "cart.h"
 
 
 int nes_init();

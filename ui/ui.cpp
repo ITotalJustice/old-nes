@@ -194,7 +194,6 @@ void gfx_debug()
         static int breakpoint = 1;
         static bool run = false;
         cpu_t *cpu = cpu_debug_get();
-        mmu_t *mmu = mem_get_mem();
 
         if (run)
         {
@@ -239,7 +238,7 @@ void gfx_debug()
         ImGui::BeginTabBar("test");
         {
             static MemoryEditor mem_edit_1;
-            mem_edit_1.DrawContents(mmu->ram, 0x2000, 0x0000);
+            mem_edit_1.DrawContents(cpu->internal_ram, 2048, 0x0000);
         }
         ImGui::EndTabBar();
     }

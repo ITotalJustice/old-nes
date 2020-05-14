@@ -7,7 +7,6 @@
 #include "nes.h"
 #include "apu.h"
 #include "cpu.h"
-#include "mmu.h"
 #include "ppu.h"
 #include "cart.h"
 
@@ -16,7 +15,6 @@ typedef struct
     const cpu_t *cpu;
     const apu_t *apu;
     const ppu_t *ppu;
-    const mmu_t *mmu;
     const cart_t *cart;
 } nes_t;
 
@@ -35,7 +33,6 @@ int nes_init()
     nes.cpu = cpu_init();
     nes.apu = apu_init();
     nes.ppu = ppu_init();
-    nes.mmu = mmu_init();
     nes.cart = cart_init();
 
     nes_initialised = true;
@@ -55,7 +52,6 @@ int nes_reset()
     cpu_reset();
     apu_reset();
     ppu_reset();
-    mmu_reset();
 
     return 0;
 }
@@ -72,7 +68,6 @@ void nes_exit()
     cpu_exit();
     apu_exit();
     ppu_exit();
-    mmu_exit();
     cart_exit();
 
     nes_initialised = false;

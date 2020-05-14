@@ -6,10 +6,172 @@
 #include <assert.h>
 
 #include "cpu.h"
-#include "mmu.h"
+#include "apu.h"
+#include "ppu.h"
+#include "cart.h"
 #include "util.h"
 
 static cpu_t *cpu = NULL;
+
+static inline void tick(uint8_t c)
+{
+    assert(c > 0);
+    cpu->cycle += c;
+    cpu->cycle_total += c;
+}
+
+static inline uint8_t read8(uint16_t addr)
+{
+    tick(1);
+    switch (addr)
+    {    
+        case CPUMemMap_ST_Ram ... CPUMemMap_ED_Ram:
+            return cpu->internal_ram[addr];
+        
+        case CPUMemMap_ST_RamMirror ... CPUMemMap_ED_RamMirror:
+            return cpu->internal_ram[addr - (CPUMemMap_ST_RamMirror * (addr % CPUMemMap_ST_RamMirror))];
+        
+        /// ppu reg
+        case CPUMemMap_ST_PPUReg ... CPUMemMap_ED_PPUReg:
+            return ppu_read_register(addr);
+
+        /// ppu reg mirrored...alot
+        case CPUMemMap_ST_PPURegMirror ... CPUMemMap_ED_PPURegMirror:
+            return ppu_read_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)));
+
+        /// sound / joypad / io
+        case 0x4000 ... 0x401F:
+            switch (addr)
+            {
+                case CPURegMemMap_SQ1_VOL:      return apu_read_register(addr);
+                case CPURegMemMap_SQ1_SWEEP:    return apu_read_register(addr);
+                case CPURegMemMap_SQ1_LO:       return apu_read_register(addr);
+                case CPURegMemMap_SQ1_HI:       return apu_read_register(addr);
+                case CPURegMemMap_SQ2_VOL:      return apu_read_register(addr);
+                case CPURegMemMap_SQ2_SWEEP:    return apu_read_register(addr);
+                case CPURegMemMap_SQ2_LO:       return apu_read_register(addr);
+                case CPURegMemMap_SQ2_HI:       return apu_read_register(addr);
+                case CPURegMemMap_TRI_LINEAR:   return apu_read_register(addr);
+                case CPURegMemMap_unused0:      return apu_read_register(addr);
+                case CPURegMemMap_TRI_LO:       return apu_read_register(addr);
+                case CPURegMemMap_TRI_HI:       return apu_read_register(addr);
+                case CPURegMemMap_NOISE_VOL:    return apu_read_register(addr);
+                case CPURegMemMap_unused1:      return apu_read_register(addr);
+                case CPURegMemMap_NOISE_LO:     return apu_read_register(addr);
+                case CPURegMemMap_NOISE_HI:     return apu_read_register(addr);
+                case CPURegMemMap_DMC_FREQ:     return apu_read_register(addr);
+                case CPURegMemMap_DMC_RAW:      return apu_read_register(addr);
+                case CPURegMemMap_DMC_START:    return apu_read_register(addr);
+                case CPURegMemMap_DMC_LEN:      return apu_read_register(addr);
+                case CPURegMemMap_OAMDMA:       return ppu_read_register(addr);
+                case CPURegMemMap_SND_CHN:      return apu_read_register(addr);
+                case CPURegMemMap_JOY1:         return 0; /// joy1
+                case CPURegMemMap_JOY2:         return 0; /// joy2
+                default:
+                    fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    assert(0);
+            }
+
+        /// cart prg-ram OR prg-rom
+        //case 0x6000 ... 0x7FFF:
+            //return cart_read(addr - 0x6000);
+
+        /// first 16kb of cart mem.
+        case 0x8000 ... 0xBFFF:
+            return cart_read(addr - 0x8000);
+
+        /// last 16kb of cart mem OR mirror of first 16kb cart mem if cart is 16kb.
+        case 0xC000 ... 0xFFFF:
+            return cart_read(addr - 0xC000);
+
+        default:
+            fprintf(stderr, "UNKOWN READ MEM ADDRESS 0x%X\n", addr);
+            assert(0);
+            return 0;
+    }
+}
+
+static inline uint16_t read16(uint16_t addr)
+{
+    return (read8(addr)) | (read8(addr + 1) << 8); 
+}
+
+static inline void write8(uint16_t addr, uint8_t v)
+{
+    tick(1);
+    switch (addr)
+    {
+        case CPUMemMap_ST_Ram ... CPUMemMap_ED_Ram:
+            cpu->internal_ram[addr] = v;
+            break;
+        
+        case CPUMemMap_ST_RamMirror ... CPUMemMap_ED_RamMirror:
+            cpu->internal_ram[addr - (CPUMemMap_ST_RamMirror * (addr % CPUMemMap_ST_RamMirror))] = v;
+            break;
+        
+        /// ppu reg
+        case CPUMemMap_ST_PPUReg ... CPUMemMap_ED_PPUReg:
+            ppu_write_register(addr, v);
+            break;
+
+        /// ppu reg mirrored...alot
+        case CPUMemMap_ST_PPURegMirror ... CPUMemMap_ED_PPURegMirror:
+            ppu_write_register(addr - (0x8 * ((addr - CPUMemMap_ST_PPUReg) % 0x8)), v);
+            break;
+
+        /// sound / joypad / io
+        case 0x4000 ... 0x401F:
+            switch (addr)
+            {
+                case CPURegMemMap_SQ1_VOL:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_SWEEP:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ1_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_VOL:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_SWEEP:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_SQ2_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_LINEAR:   apu_write_register(addr, v);    break;
+                case CPURegMemMap_unused0:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_LO:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_TRI_HI:       apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_VOL:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_unused1:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_LO:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_NOISE_HI:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_FREQ:     apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_RAW:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_START:    apu_write_register(addr, v);    break;
+                case CPURegMemMap_DMC_LEN:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_OAMDMA:       ppu_write_register(addr, v);    break;
+                case CPURegMemMap_SND_CHN:      apu_write_register(addr, v);    break;
+                case CPURegMemMap_JOY1:         assert(0); break; /// joystick strobe.
+                case CPURegMemMap_JOY2:         apu_write_register(addr, v);    break;
+                default:
+                    fprintf(stderr, "READING UNSUED MEM MAPPED REGISTERS 0x%04X\n", addr);
+                    assert(0);
+                    break;
+            }
+
+        /// cart READ ONLY
+        case 0x6000 ... 0xFFFF:
+            fprintf(stderr, "Trying to write to ROM cart: 0x%X\n", addr);
+            assert(0);
+            break;
+
+        default:
+            fprintf(stderr, "UNKOWN WRITE MEM ADDRESS 0x%X\n", addr);
+            assert(0);
+            break;
+    }
+}
+
+static inline void write16(uint16_t addr, uint16_t v)
+{
+    /// LSB first then MSB.
+    write8(addr, v & 0xFF);
+    write8(addr + 1, v >> 8);
+}
 
 const cpu_t *cpu_init()
 {
@@ -59,7 +221,7 @@ int cpu_reset()
 
     /// Set registers.
     cpu->reg.SP -= 3;
-    cpu->reg.PC = mmu_read16(0xFFFC);
+    cpu->reg.PC = read16(0xFFFC);
 
     /// misc.
     cpu->oprand = 0;
@@ -89,7 +251,7 @@ int cpu_power_up()
     cpu->reg.X = false;
     cpu->reg.Y = false;
     cpu->reg.SP = 0xFD;
-    cpu->reg.PC = mmu_read16(0xFFFC);
+    cpu->reg.PC = read16(0xFFFC);
 
     /// misc.
     cpu->oprand = 0;
@@ -97,7 +259,7 @@ int cpu_power_up()
     cpu->cycle = 0;
     cpu->debug.count = 0;
 
-    #if 0
+    #if 1
     /// This is for nestest auto.
     cpu->reg.status_flag.D = true;
     cpu->cycle = 7;
@@ -110,37 +272,6 @@ int cpu_power_up()
 void cpu_reset_cycle()
 {
     cpu->cycle = 0;
-}
-
-static inline void tick(uint8_t c)
-{
-    assert(c > 0);
-    cpu->cycle += c;
-    cpu->cycle_total += c;
-}
-
-static inline uint8_t read8(uint16_t addr)
-{
-    tick(1);
-    return mmu_read8(addr);
-}
-
-static inline uint16_t read16(uint16_t addr)
-{
-    tick(2);
-    return mmu_read16(addr);
-}
-
-static inline void write8(uint16_t addr, uint8_t v)
-{
-    mmu_write8(addr, v);
-    tick(1);
-}
-
-static inline void write16(uint16_t addr, uint16_t v)
-{
-    mmu_write16(addr, v);
-    tick(2);
 }
 
 static inline void page_cross(uint16_t a, uint16_t b)
@@ -863,7 +994,9 @@ int cpu_tick()
 {
     /// 149 instructions so far...
 
-    cpu->opcode = mmu_read8(cpu->reg.PC);
+    cpu->opcode = read8(cpu->reg.PC);
+    --cpu->cycle;
+    --cpu->cycle_total;
 
     printf("%04X   %02X %04X \tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u count:%lu\n",
     cpu->reg.PC, cpu->opcode, cpu->oprand, cpu->reg.A, cpu->reg.X, cpu->reg.Y, cpu->reg.P, cpu->reg.SP, cpu->cycle, cpu->debug.count);
