@@ -9,6 +9,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "cart.h"
+#include "mapper.h"
 
 typedef struct
 {
@@ -34,6 +35,7 @@ int nes_init()
     nes.apu = apu_init();
     nes.ppu = ppu_init();
     nes.cart = cart_init();
+    mapper_init();
 
     nes_initialised = true;
 
@@ -52,6 +54,7 @@ int nes_reset()
     cpu_reset();
     apu_reset();
     ppu_reset();
+    cart_reset();
 
     return 0;
 }
@@ -69,6 +72,7 @@ void nes_exit()
     apu_exit();
     ppu_exit();
     cart_exit();
+    mapper_exit();
 
     nes_initialised = false;
 }

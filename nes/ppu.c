@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "ppu.h"
+#include "mapper.h"
 
 static ppu_t *ppu = NULL;
 
@@ -68,6 +69,7 @@ uint8_t ppu_read_register(uint16_t addr)
         case PPURegisterAddr_PPUADDR:   return ppu->reg.ppu_addr;
         case PPURegisterAddr_PPUDATA:   return ppu->reg.ppu_data;
         case PPURegisterAddr_OAMDMA:    return ppu->reg.oam_dma;
+
         default:
             fprintf(stderr, "READING FROM NON VALID ADDRESS IN PPU READ REG: 0x%04X\n", addr);
             assert(0);
@@ -101,7 +103,6 @@ typedef enum
     PPUMemMap_ED_PatternTable0 = 0x0FFF,
     PPUMemMap_ST_PatternTable1,
     PPUMemMap_ED_PatternTable1 = 0x1FFF,
-
     PPUMemMap_ST_Nametable0,
     PPUMemMap_ED_Nametable0 = 0x23FF,
     PPUMemMap_ST_Nametable1,
@@ -110,13 +111,10 @@ typedef enum
     PPUMemMap_ED_Nametable2 = 0x2BFF,
     PPUMemMap_ST_Nametable3,
     PPUMemMap_ED_Nametable3 = 0x2FFF,
-
     PPUMemMap_ST_NametableMirrors,
     PPUMemMap_ED_NametableMirrors = 0x3EFF,
-
     PPUMemMap_ST_PaletteRamIndexes,
     PPUMemMap_ED_PaletteRamIndexes = 0x3F1F,
-
     PPUMemMap_ST_PaletteRamIndexesMirrors,
     PPUMemMap_ED_PaletteRamIndexesMirrors = 0x3FFF,
 } PPUMemMap;

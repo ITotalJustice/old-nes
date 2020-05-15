@@ -238,6 +238,8 @@ typedef struct
 const cart_t *cart_init();
 void cart_exit();
 
+int cart_reset();
+
 void cart_eject();
 int cart_load(const char *path);
 

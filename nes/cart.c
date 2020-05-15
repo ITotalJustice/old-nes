@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "cart.h"
+#include "mapper.h"
 #include "util.h"
 
 static cart_t *cart = NULL;
@@ -51,6 +52,14 @@ void cart_exit()
 
     free(cart);
     cart = NULL;
+}
+
+int cart_reset()
+{
+    /// currently only the mapper in the cart needs to be reset.
+    /// I call this in the cart function because the mapper was also set in the cart function.
+    /// so it makes sense to also reset it here.
+    return mapper_reset();
 }
 
 void cart_eject()
@@ -135,6 +144,15 @@ int cart_load(const char *path)
         goto fail_close;
     }
 
+    /// check if the header is valid.
+    bool is_ines = strncmp(header.id, HEADER_ID, 3) == 0;
+    assert(is_ines);
+    if (is_ines == false)
+    {
+        fprintf(stderr, "Not a iNES rom WANT: %s GOT:%s ROM:%s\n", HEADER_ID, header.id, path);
+        goto fail_close;
+    }
+
     /// TODO: parse header.
     printf("\n#### ROM-INFO ####\n");
     {
@@ -146,15 +164,6 @@ int cart_load(const char *path)
         printf("mapper number: %u\n", header.flags6.mapper_number);
     }
     printf("#### ROM-END ####\n\n");
-
-    /// check if the header is valid.
-    bool is_ines = strncmp(header.id, HEADER_ID, 3) == 0;
-    assert(is_ines);
-    if (is_ines == false)
-    {
-        fprintf(stderr, "Not a iNES rom WANT: %s GOT:%s ROM:%s\n", HEADER_ID, header.id, path);
-        goto fail_close;
-    }
 
     /// update rom size now that we have read the header.
     rom_size -= HEADER_SIZE;
@@ -176,6 +185,8 @@ int cart_load(const char *path)
 
     fclose(fp);
 
+    mapper_is_avaliable(header.flags6.mapper_number);
+    
     memcpy(&cart->header, &header, HEADER_SIZE);
     cart->rom = rom_data;
     cart->size = rom_size;

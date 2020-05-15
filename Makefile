@@ -9,7 +9,7 @@ SOURCES 	= main.c
 SOURCES		+= ui/ui.cpp
 
 # Nes files
-SOURCES 	+= ../nes/nes.c ../nes/cpu.c nes/ppu.c nes/apu.c nes/cart.c
+SOURCES 	+= nes/nes.c nes/cpu.c nes/ppu.c nes/apu.c nes/cart.c nes/mapper.c nes/mappers/mapper_0.c
 
 # imgui
 SOURCES		+= libs/imgui/imgui.cpp libs/imgui/imgui_widgets.cpp libs/imgui/imgui_draw.cpp libs/imgui/imgui_demo.cpp
@@ -22,7 +22,7 @@ LIBS		= -lGL -ldl `sdl2-config --libs`
 
 CXXFLAGS	= -I./libs/imgui -I./libs/imgui/examples/
 
-CXXFLAGS	+= -march=native -Wall -Wformat -O3 -ffunction-sections -fno-exceptions -Wl,--gc-sections #-DNDEBUG
+CXXFLAGS	+= -march=native -Wall -Wformat -ffunction-sections -fno-exceptions -Wl,--gc-sections #-DNDEBUG
 
 OBJS		= $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 
@@ -39,11 +39,14 @@ CFLAGS		= $(CXXFLAGS)
 %.o:%.c
 	$(CC) $(CXXFLAGS) -c -o $@ $<
 
-%.o:ui/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
 %.o:nes/%.c
 	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+%.o:nes/mappers/%.c
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+%.o:ui/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:libs/imgui/examples/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
