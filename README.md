@@ -2,6 +2,10 @@
 
 WIP Nes Emulator.
 
+My first go at a NES emulator...it didn't go so well.
+
+I plan to rewrite this at some point.
+
 ----
 
 ## Sources
